@@ -251,7 +251,7 @@ bool LayerMainBottom::init()
     txtGold = dynamic_cast<Text*>(rootNode->getChildByName("txtGold"));
     this->txtSilver = dynamic_cast<Text*>(rootNode->getChildByName("txtSilver"));
     this->txtVip = dynamic_cast<Text*>(rootNode->getChildByName("txtVip"));
-    this->txtName->setString("MegaWin");
+    this->txtName->setString("NagaClub");
     if (SceneManager::getSingleton().isNagaCard){
         this->txtName->setString("NagaCard");
     }
@@ -586,7 +586,8 @@ void LayerMainBottom::logOut(){
     if (SceneManager::getSingleton().isNagaNew || SceneManager::getSingleton().isNagaWin){
         return;
     }
-    this->txtName->setString("MegaWin");
+//    this->txtName->setString("MegaWin");
+    this->txtName->setString("NagaClub");
     if (SceneManager::getSingleton().isNagaCard){
         this->txtName->setString("NagaCard");
     }
@@ -908,7 +909,8 @@ void LayerMainBottom::loadAllDatas()
         return;
     }
     if (!SceneManager::getSingleton().isLogin && !SceneManager::getSingleton().getIsFlagStore()){
-        this->txtName->setString("MegaWin");
+//        this->txtName->setString("MegaWin");
+        this->txtName->setString("NagaClub");
         if (SceneManager::getSingleton().isNagaCard){
             this->txtName->setString("NagaCard");
         }

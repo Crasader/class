@@ -1482,8 +1482,11 @@ void ScenePickRoom::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost::sha
         SceneManager::getSingleton().gotoGame(atoi(_gameID.c_str()));
         return;
     }
-    //if (getGameID() != kGameXiTo){
-    SceneManager::getSingleton().gotoGame(atoi(_gameID.c_str()));
+   // if (getGameID() != kGamePoker){
+        SceneManager::getSingleton().gotoGame(atoi(_gameID.c_str()));
+//    }
+    
+    
 }
 
 void ScenePickRoom::OnSmartFoxRoomJoinError(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
@@ -2261,8 +2264,9 @@ void ScenePickRoom::onButtonRoomScene(Ref* pSender)
                     chontien->setMinMaxValue(nBetValue, bet_ratio*nBetValue);
                     auto _currScene = Director::getInstance()->getRunningScene();
                     if (!_currScene) return;
-                    _currScene->addChild(chontien, ZORDER_POPUP_RANK,9146);
-                    
+                    //Casi cux;
+//                    _currScene->addChild(chontien, ZORDER_POPUP_RANK,9146);
+                    _currScene->addChild(chontien, ZORDER_POPUP_RANK,91460);
                 }
                 else if (_gameID == kGameLieng){
                     vector<strGameCF> arrBet = SceneManager::getSingleton().getArrConfig();

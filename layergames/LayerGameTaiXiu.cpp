@@ -1,3 +1,5 @@
+#include "../layergames/LayerLauncherMiniGame.h"
+#include "Requests/LeaveRoomRequest.h"
 #include "LayerGameTaiXiu.h"
 #include "LayerTaiXiuHistory.h"
 #include "LayerTaiXiuPopupWinners.h"
@@ -9,9 +11,10 @@
 #include "ChanUtils.h"
 #include "LayerAnimationTaiXiu.h"
 #include "PhomMessDef.h"
-
+#include "../scenes/SceneMain.h"
 #include "../layers/LayerPopupRecharge.h"
 #include "../layers/LayerGuideInGame.h"
+#include "layergames/ChanUtils.h"
 
 #define TAG_TAI_XIU_HISTORY 500
 #define TAG_TAI_XIU_TOPWINS 501
@@ -19,7 +22,7 @@
 #define DURATION_ANIMATE_COIN_CLICK 0.1
 #define TAG_TAI_XIU_XO_BA0 502
 #define TAG_ANIM_END_GAME 503
-#define SCALE_COIN_TAI_XIU 0.5
+#define SCALE_COIN_TAI_XIU 0.3
 
 LayerGameTaiXiu::LayerGameTaiXiu()
 :Toast(NULL),
@@ -83,14 +86,16 @@ LayerGameTaiXiu::~LayerGameTaiXiu()
 
 	vector<TaiXiuBet*>::iterator it;
 	for (it = this->arrBet.begin(); it != this->arrBet.end();){
-		delete *it;
+        // Đóng tạm
+//        delete *it;
 		it = this->arrBet.erase(it);
 	}
 	this->arrBet.clear();
 
 	vector<TaiXiuCoin*>::iterator it1;
 	for (it1 = this->arrCoin.begin(); it1 != this->arrCoin.end();){
-		delete *it1;
+        // Đóng tạm
+//        delete *it1;
 		it1 = this->arrCoin.erase(it1);
 	}
 	this->arrCoin.clear();
@@ -139,6 +144,8 @@ bool LayerGameTaiXiu::init()
 	if (mySelf == NULL)
 		return false;
 
+    this->currTypeMoney = SceneManager::getSingleton().getCurrRoomType();
+    
 	Size SizeAdd = ChanUtils::getSizePos();
 	Size winsize = Director::getInstance()->getVisibleSize();
 	Sprite* p = Sprite::create("tx-background.jpg");
@@ -154,7 +161,7 @@ bool LayerGameTaiXiu::init()
 	this->playerInfo = new PlayerTaiXiuInfo();
 	this->mQueueTaiXiu = new QueueTaiXiu();
 
-	this->SetRoomConfig();
+    this->SetRoomConfig();
 
 	Size visibleSize = Director::getInstance()->getVisibleSize();
 
@@ -163,13 +170,89 @@ bool LayerGameTaiXiu::init()
 	this->rootNode = CSLoader::getInstance()->createNode("LayerTaiXiuMain.csb");
 	this->rootNode->setContentSize(visibleSize);
 
+    ///Chat View
+    this->chat = LayerChatGame::create();
+    this->rootNode->addChild(this->chat, 200000);
+    this->chat->setPosition(Vec2(1450, 0));
+    
+    
+    //Menu game mini
+    Size sizeAdd = ChanUtils::getSizePos();
+    LayerLauncherMiniGame* minigame = LayerLauncherMiniGame::create();
+    minigame->setPosition(Vec2(sizeAdd.width, sizeAdd.height + 160));
+    this->rootNode->addChild(minigame, ZORDER_LIST::ZORDER_TAIXIU_MINI);
+    
+    ///
+    this->btnChuyenDongTien = (Button*)this->rootNode->getChildByName("btnChuyenDongTien");
+    btnChuyenDongTien->addClickEventListener(CC_CALLBACK_1(LayerGameTaiXiu::onBtnChuyenDongTien, this));
+    if (this->currTypeMoney ==0 ){
+        this->btnChuyenDongTien->loadTextures("ResBautom/dongmoc-min.png", "ResBautom/dongmoc-min.png");
+    }else{
+        this->btnChuyenDongTien->loadTextures("ResBautom/donghao-min.png", "ResBautom/donghao-min.png");
+    }
+    
+//    this->arrCoinBetted = TaiXiuCoinFactory::CreateListTaiXiuCoin()
+    this->createListCoinBetted();
+    
+    Button* btnRank = static_cast<Button*>(this->rootNode->getChildByName("btnRank"));
+    btnRank->addClickEventListener(CC_CALLBACK_1(LayerGameTaiXiu::onBtnXepHang, this));
 	//tool set
-	this->tfResult = dynamic_cast<TextField*>(this->rootNode->getChildByName("tfResult"));
-	auto btnSet = dynamic_cast<Button*>(this->rootNode->getChildByName("btnSet"));
-	btnSet->addTouchEventListener(CC_CALLBACK_2(LayerGameTaiXiu::processButtonSetTouched, this));
-	this->tfResult->setVisibleEditBox(false);
-	btnSet->setVisible(false);
-
+//    this->tfResult = dynamic_cast<TextField*>(this->rootNode->getChildByName("tfResult"));
+//    auto btnSet = dynamic_cast<Button*>(this->rootNode->getChildByName("btnSet"));
+//    btnSet->addTouchEventListener(CC_CALLBACK_2(LayerGameTaiXiu::processButtonSetTouched, this));
+//    this->tfResult->setVisibleEditBox(false);
+//    btnSet->setVisible(false);
+    Node* layerTaiXiuBottom = static_cast<cocos2d::Node*>(rootNode->getChildByName("layerTaiXiuBottom"));
+    if (layerTaiXiuBottom != NULL) {
+        
+        
+        
+        Button* btn1k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn1k"));
+        Button* btn5k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn5k"));
+        Button* btn10k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn10k"));
+        Button* btn50k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn50k"));
+        Button* btn100k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn100k"));
+        Button* btn500k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn500k"));
+        Button* btn1M = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn1M"));
+        Button* btn5M = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn5M"));
+        
+        BtnCoin btnCoin1;
+        btnCoin1.btn = btn1k;
+        btnCoin1.tag = tag_BET_VALUE_2K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin1);
+        BtnCoin btnCoin2;
+        btnCoin2.btn = btn5k;
+        btnCoin2.tag = tag_BET_VALUE_5K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin2);
+        BtnCoin btnCoin3;
+        btnCoin3.btn = btn10k;
+        btnCoin3.tag = tag_BET_VALUE_10K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin3);
+        BtnCoin btnCoin4;
+        btnCoin4.btn = btn50k;
+        btnCoin4.tag = tag_BET_VALUE_50K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin4);
+        BtnCoin btnCoin5;
+        btnCoin5.btn = btn100k;
+        btnCoin5.tag = tag_BET_VALUE_100K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin5);
+        BtnCoin btnCoin6;
+        btnCoin6.btn = btn500k;
+        btnCoin6.tag = tag_BET_VALUE_500K;
+        this->ArrayListCoinFromStudio.push_back(btnCoin6);
+        BtnCoin btnCoin7;
+        btnCoin7.btn = btn1M;
+        btnCoin7.tag = tag_BET_VALUE_1M;
+        this->ArrayListCoinFromStudio.push_back(btnCoin7);
+        BtnCoin btnCoin8;
+        btnCoin8.btn = btn5M;
+        btnCoin8.tag = tag_BET_VALUE_5M;
+        this->ArrayListCoinFromStudio.push_back(btnCoin8);
+        initListCoin();
+        //initPlayerInfo();
+    }
+    
+    
 	//moc3-begin change (dua button charge ra tx main)
 	this->lblMoney = dynamic_cast<Text*>(this->rootNode->getChildByName("lblMoney"));
 	float amf = 0;
@@ -179,6 +262,7 @@ bool LayerGameTaiXiu::init()
 			amf = *userVars->GetDoubleValue();
 			log("amf currType == 0");
 			this->playerInfo->initMoney((long)amf);
+            this->SelectCoin(amf);
 		}
 	}
 	else if (SceneManager::getSingleton().getCurrRoomType() == 1){
@@ -187,6 +271,7 @@ bool LayerGameTaiXiu::init()
 			amf = *userVars->GetDoubleValue();
 			log("amf currType == 1");
 			this->playerInfo->initMoney((long)amf);
+            this->SelectCoin(amf);
 		}
 	}
     auto Text_50 = static_cast<Text*> (this->rootNode->getChildByName("Text_50"));
@@ -279,53 +364,7 @@ bool LayerGameTaiXiu::init()
 		}
 	}
 
-	Node* layerTaiXiuBottom = static_cast<cocos2d::Node*>(rootNode->getChildByName("layerTaiXiuBottom"));
-	if (layerTaiXiuBottom != NULL) {
-
-		Button* btn1k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn1k"));
-		Button* btn5k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn5k"));
-		Button* btn10k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn10k"));
-		Button* btn50k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn50k"));
-		Button* btn100k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn100k"));
-		Button* btn500k = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn500k"));
-		Button* btn1M = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn1M"));
-		Button* btn5M = static_cast<Button*>(layerTaiXiuBottom->getChildByName("btn5M"));
-
-		BtnCoin btnCoin1;
-		btnCoin1.btn = btn1k;
-		btnCoin1.tag = tag_BET_VALUE_2K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin1);
-		BtnCoin btnCoin2;
-		btnCoin2.btn = btn5k;
-		btnCoin2.tag = tag_BET_VALUE_5K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin2);
-		BtnCoin btnCoin3;
-		btnCoin3.btn = btn10k;
-		btnCoin3.tag = tag_BET_VALUE_10K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin3);
-		BtnCoin btnCoin4;
-		btnCoin4.btn = btn50k;
-		btnCoin4.tag = tag_BET_VALUE_50K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin4);
-		BtnCoin btnCoin5;
-		btnCoin5.btn = btn100k;
-		btnCoin5.tag = tag_BET_VALUE_100K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin5);
-		BtnCoin btnCoin6;
-		btnCoin6.btn = btn500k;
-		btnCoin6.tag = tag_BET_VALUE_500K;
-		this->ArrayListCoinFromStudio.push_back(btnCoin6);
-		BtnCoin btnCoin7;
-		btnCoin7.btn = btn1M;
-		btnCoin7.tag = tag_BET_VALUE_1M;
-		this->ArrayListCoinFromStudio.push_back(btnCoin7);
-		BtnCoin btnCoin8;
-		btnCoin8.btn = btn5M;
-		btnCoin8.tag = tag_BET_VALUE_5M;
-		this->ArrayListCoinFromStudio.push_back(btnCoin8);
-		initListCoin();
-		//initPlayerInfo();
-	}
+	
 
 	//Line 1.
 	Node* nodeCuocLine1 = static_cast<cocos2d::Node*>(rootNode->getChildByName("nodeCuocLine1"));
@@ -481,7 +520,7 @@ bool LayerGameTaiXiu::init()
 	ui::Helper::doLayout(this->rootNode);
 	this->addChild(this->rootNode);
 
-	this->SelectCoin(this->playerInfo->SoTienThuc);
+	
 
 	this->arrTextHayDatCuoc.clear();
 	this->arrTextHayDatCuoc.push_back(dataManager.GetSysString(12)+" .");
@@ -507,6 +546,8 @@ bool LayerGameTaiXiu::init()
 	layerButton->setLocalZOrder(1100);
 	this->addChild(layerButton);
 
+    
+    
 	float widButton2 = 82;
 	float dis = 30;
 
@@ -534,6 +575,10 @@ bool LayerGameTaiXiu::init()
 	btnBack->setAnchorPoint(Vec2(0, 1));
 	btnBack->setPosition(Vec2(dis, HEIGHT_DESIGN - dis));
 
+    
+    
+    //Chat
+    
 	//Sprite* signal = (Sprite*)layerButton->getChildByTag(120);
 	//if (signal != NULL){
 	//	signal->setVisible(false);
@@ -582,7 +627,7 @@ void LayerGameTaiXiu::SelectCoin(const double& amf){
 	}
 }
 void LayerGameTaiXiu::initListCoin() {
-
+    this->arrCoin.clear();
 	//this.ArrayListCoinFromStudio.push({btn: btn1k, tag: tag_BET_VALUE_1K});
 	for (int i = 0; i < this->ArrListValueBet.size(); ++i) {
 		try {
@@ -654,9 +699,10 @@ std::string LayerGameTaiXiu::SelectCoinValue(const double& amf, const int& ext)
 			return BET_VALUE_10K;
 		}
 
+
 		//50k
 		else if (per >= 50000 && per < 100000) {
-			return BET_VALUE_50K;
+            return BET_VALUE_50K;
 		}
 
 		else if (per >= 100000 && per < 500000) {
@@ -707,10 +753,12 @@ std::string LayerGameTaiXiu::SelectCoinValue(const double& amf, const int& ext)
 		else if (per >= 10000 && per < 50000) {
 			return BET_VALUE_10K;
 		}
-
+        
+        //ThaoHX - 50k k có trong list chip => set tạm 100k
 		//50k
 		else if (per >= 50000 && per < 100000) {
-			return BET_VALUE_50K;
+//            return BET_VALUE_100K;
+            return BET_VALUE_50K;
 		}
 
 		else if (per >= 100000 && per < 500000) {
@@ -859,6 +907,7 @@ void LayerGameTaiXiu::HideAllSuggestion(){
 }
 
 void LayerGameTaiXiu::CreateContainerCoin(Button* btn, const char* name, const int& tag, const char* type){
+    
 	btn->addTouchEventListener(CC_CALLBACK_2(LayerGameTaiXiu::OnButtonChipClick, this));
 	btn->setTag(tag);
 
@@ -1013,7 +1062,7 @@ void LayerGameTaiXiu::OnButtonChipClick(Ref *sender, ui::Widget::TouchEventType 
 
 void LayerGameTaiXiu::OnButtonBetClick(Ref *sender, Widget::TouchEventType pType)
 {
-
+    if (SceneMain::getSingleton().chatting == true) return;
 	if (pType == ui::Widget::TouchEventType::BEGAN){
 		Button* btn = (Button*)sender;
 		this->CurrentTag = btn->getTag();
@@ -1081,19 +1130,23 @@ void LayerGameTaiXiu::BetGameByClient(const int& tag){
 
 		if (src != "") {
 			Vec2 p = bet->GetWorldPos();
-
+            p.x =( p.x) +rand() % 50;
+            p.y =( p.y - 20) +rand() % 50;
+            
 			//Tao image de animations
 			ImageView* imgCoin = ImageView::create();
-			imgCoin->loadTexture("moc3-icon-moc.png");
+			imgCoin->loadTexture(src);
+//            imgCoin->loadTexture("moc3-icon-moc.png");
 			imgCoin->setScale(SCALE_COIN_TAI_XIU);
 			__pos.y = __pos.y - 95;
 			imgCoin->setPosition(__pos);
-
+            imgCoin->setLocalZOrder(1000);
+            
 			MoveTo* moveTo = MoveTo::create(DURATION_ANIMATE_COIN_CLICK, p);
 			CallFuncN * callfun = CallFuncN::create(CC_CALLBACK_1(LayerGameTaiXiu::AddCoinCallFunc2, this, bet));
 
 			//Add image và animation.
-			this->addChild(imgCoin);
+			this->rootNode->addChild(imgCoin);
 
 			imgCoin->runAction(Sequence::create(moveTo, callfun, NULL));
 
@@ -1146,6 +1199,39 @@ void LayerGameTaiXiu::AddCoinCallFunc2(Ref *sender, TaiXiuBet* data){
 	if (img != NULL){
 		data->AddCoin(img);
 	}
+}
+
+void LayerGameTaiXiu::onBtnChuyenDongTien(Ref* pSender){
+    this->isJoin = false;
+    // log("chuyen dong tien");
+    
+    
+    this->setStateButtonBet(-1);
+    this->currBetvalue = 0;
+    
+    boost::shared_ptr< Room > lastRoom = GameServer::getSingleton().getSmartFox()->LastJoinedRoom();
+    if (NULL == lastRoom)
+    {
+        //SceneManager::getSingleton().gotoPickGame(this->gameID);
+        SceneManager::getSingleton().gotoMain();
+        
+    }
+    else
+    {
+        this->ResetGame();
+        SceneManager::getSingleton().setIsChuyenTab(true);
+        boost::shared_ptr<IRequest> request(new LeaveRoomRequest());
+        GameServer::getSingleton().Send(request);
+        
+    }
+    SceneManager::getSingleton().showLoading();
+}
+
+void LayerGameTaiXiu::onBtnXepHang(Ref* pSender){
+    LayerBangXepHangTo* xh = LayerBangXepHangTo::create();
+    xh->loadTopByType();
+    this->addChild(xh,700000);
+    
 }
 
 void LayerGameTaiXiu::OnButtonHistoryClick(Ref *sender, ui::Widget::TouchEventType pType){
@@ -1258,6 +1344,8 @@ void LayerGameTaiXiu::OnSmartFoxUserVariableUpdate(unsigned long long ptrContext
 	boost::shared_ptr<void> ptrEventParamValueUser = (*ptrEventParams)["user"];
 	boost::shared_ptr<User> ptrNotifiedUser = ((boost::static_pointer_cast<User>))(ptrEventParamValueUser);
 
+    
+    
 	if (ptrNotifiedUser == NULL)
 		return;
 
@@ -1295,15 +1383,115 @@ void LayerGameTaiXiu::OnSmartFoxRoomVariableUpdate(unsigned long long ptrContext
 }
 
 void LayerGameTaiXiu::OnSmartFoxPublicMessage(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
-
+ 
 }
 
 void LayerGameTaiXiu::OnSmartFoxConnectionLost(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
 
 }
 
-void LayerGameTaiXiu::OnSmartFoxUserExitRoom(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
+void LayerGameTaiXiu::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
+    /// Đoạn này nhét tạm khi chưa có chuyển dòng tiền
+    if (this->chat != NULL)
+        this->chat->loadAllDatas();
+    
+    if (this->currTypeMoney ==0 ){
+        this->btnChuyenDongTien->loadTextures("ResBautom/dongmoc-min.png", "ResBautom/dongmoc-min.png");
+        this->iconMoney->loadTexture("moc3-icon-moc.png");
+    }else{
+        this->btnChuyenDongTien->loadTextures("ResBautom/donghao-min.png", "ResBautom/donghao-min.png");
+        this->iconMoney->loadTexture("moc3-icon-hao.png");
+    }
+    this->SetRoomConfig();
+    this->updateInfoMe();
+    this->initPlayerInfo();
+}
 
+void LayerGameTaiXiu::OnSmartFoxUserExitRoom(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
+    
+    
+    boost::shared_ptr<map<string, boost::shared_ptr<void>>> ptrEventParams = ptrEvent->Params();
+    boost::shared_ptr<void> ptrEventParamValueUser = (*ptrEventParams)["user"];
+    boost::shared_ptr<User> ptrNotifiedUser = ((boost::static_pointer_cast<User>))(ptrEventParamValueUser);
+    // Get the room parameter of the event
+    boost::shared_ptr<void> ptrEventParamValueRoom = (*ptrEventParams)["room"];
+    boost::shared_ptr<Room> ptrNotifiedRoom = ((boost::static_pointer_cast<Room>))(ptrEventParamValueRoom);
+    //
+    if (ptrNotifiedUser == NULL || ptrNotifiedRoom == NULL) return;
+    
+    if (ptrNotifiedRoom->GroupId()->compare(SERVICE_CHAT_ROOM) == 0
+        || ptrNotifiedRoom->Id() == 118 || ptrNotifiedRoom->GroupId()->compare("200") == 0
+        || ptrNotifiedRoom->Id() == 200)
+        return;
+    
+    //if it is me
+    if (!ptrNotifiedUser->IsItMe()){
+        log ("return do khong phai minh");
+        return;
+    }
+    
+    
+    log ("return do joinj roi");
+    
+    if (this->isJoin) return;
+    log ("return do currTypeMoney = -1");
+    
+    if (this->currTypeMoney == -1) return;
+    log ("return do currTypeMoney = khong phai tx");
+    
+    if (SceneManager::getSingleton().getGameID() != kGameTaiXiu) return;
+    log ("return do currTypeMoney = khong phai bau tom");
+    
+    
+    if (this->currTypeMoney == 0){
+        boost::shared_ptr<vector<boost::shared_ptr<Room> > > list_room = GameServer::getSingleton().getSmartFox()->GetRoomListFromGroup(boost::to_string(kGameTaiXiu));
+        for (int i = 0; i < list_room->size(); i++)
+        {
+            boost::shared_ptr<Room> room = list_room->at(i);
+            if (room != NULL)
+            {
+                if (room->GetVariable("roomType") != NULL){
+                    int roomType = (int)*room->GetVariable("roomType")->GetIntValue();
+                    
+                    if (roomType == 1){
+                        this->currTypeMoney = 1;
+                        SceneManager::getSingleton().setCurrRoomType(this->currTypeMoney);
+                        boost::shared_ptr<long> lastRoomID(new long(-1));
+                        boost::shared_ptr<Room> lastRoom = GameServer::getSingleton().getSmartFox()->LastJoinedRoom();
+                        if (lastRoom)
+                            lastRoomID = boost::shared_ptr<long>(new long(lastRoom->Id()));
+                        // log("Room Tai Xiu != NULL");
+                        boost::shared_ptr<IRequest> request(new JoinRoomRequest(room, "", lastRoomID, false));
+                        GameServer::getSingleton().Send(request);
+                    }
+                }
+            }
+        }
+    }else{
+        boost::shared_ptr<vector<boost::shared_ptr<Room> > > list_room = GameServer::getSingleton().getSmartFox()->GetRoomListFromGroup(boost::to_string(kGameTaiXiu));
+        for (int i = 0; i < list_room->size(); i++)
+        {
+            boost::shared_ptr<Room> room = list_room->at(i);
+            if (room != NULL)
+            {
+                if (room->GetVariable("roomType") != NULL){
+                    int roomType = (int)*room->GetVariable("roomType")->GetIntValue();
+                    if (roomType == 0){
+                        this->currTypeMoney = 0;
+                        SceneManager::getSingleton().setCurrRoomType(this->currTypeMoney);
+                        
+                        boost::shared_ptr<long> lastRoomID(new long(-1));
+                        boost::shared_ptr<Room> lastRoom = GameServer::getSingleton().getSmartFox()->LastJoinedRoom();
+                        if (lastRoom)
+                            lastRoomID = boost::shared_ptr<long>(new long(lastRoom->Id()));
+                        // log("Room Tai Xiu != NULL");
+                        boost::shared_ptr<IRequest> request(new JoinRoomRequest(room, "", lastRoomID, false));
+                        GameServer::getSingleton().Send(request);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void LayerGameTaiXiu::OnSmartFoxUserCountChange(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
@@ -1336,10 +1524,10 @@ void LayerGameTaiXiu::event_EXT_EVENT_START()
 		string t = boost::to_string((int)*ttp);
 		this->txtNumOfPlayers->setString(dataManager.GetSysString(19)+" " + t);
 	}
-
-	this->resultDice1->setVisible(false);
-	this->resultDice2->setVisible(false);
-	this->resultDice3->setVisible(false);
+//
+//    this->resultDice1->setVisible(false);
+//    this->resultDice2->setVisible(false);
+//    this->resultDice3->setVisible(false);
 
 	this->ResetGame();
 
@@ -1490,7 +1678,9 @@ void LayerGameTaiXiu::event_EXT_EVENT_GAME_STATE_NTF(){
 	boost::shared_ptr<long> gstate = this->param->GetInt(EXT_FIELD_GAME_PLAY_STATE);
 	boost::shared_ptr<string> gbt = this->param->GetUtfString(EXT_FIELD_GAME_BET_TYPE);
 	boost::shared_ptr<string> gbex = this->param->GetUtfString(EXT_FIELD_GAME_BET_EXCHANGE);
-
+    
+    this->isJoin = true;
+    
 	// Thoi gian con lai cua van choi
 	if (gtime != NULL) {
 		this->TimerCountDown = *gtime;
@@ -1580,8 +1770,8 @@ void LayerGameTaiXiu::Update5sStep(float dt){
 
 				//Lay src cua coin
 				std::string src = "";
-				for (int j = 0; j < this->arrCoin.size(); ++j) {
-					TaiXiuCoin* pCoin = this->arrCoin.at(j);
+				for (int j = 0; j < this->arrCoinBetted.size(); ++j) {
+					TaiXiuCoin* pCoin = this->arrCoinBetted.at(j);
 					if (pCoin->GetType() == coin) {
 						src = pCoin->GetValue().imgnormal;
 						break;
@@ -1589,11 +1779,15 @@ void LayerGameTaiXiu::Update5sStep(float dt){
 				}
 
 				Vec2 p = bet->GetWorldPos();
+                p.x =( p.x) +rand() % 50;
+                p.y =( p.y - 20) +rand() % 50;
+                
 				ImageView* imgCoin = ImageView::create();
 				imgCoin->loadTexture(src);
 				imgCoin->setScale(SCALE_COIN_TAI_XIU);
 				imgCoin->setPosition(Vec2(WIDTH_DESIGN / 2, 100));
-
+                imgCoin->setLocalZOrder(1000);
+                
 				MoveTo* moveTo = MoveTo::create(DURATION_ANIMATE_COIN, p);
 
 				Struct4Call1 __d;
@@ -1602,7 +1796,7 @@ void LayerGameTaiXiu::Update5sStep(float dt){
 
 				CallFuncN * callfun = CallFuncN::create(CC_CALLBACK_1(LayerGameTaiXiu::AddCoinCallFunc, this, __d));
 
-				this->addChild(imgCoin);
+				this->rootNode->addChild(imgCoin);
 				imgCoin->runAction(Sequence::create(moveTo, callfun, NULL));
 			}
 		}
@@ -1693,10 +1887,36 @@ void LayerGameTaiXiu::ReloadGameWhenReturn(string& gbt) {
 				yourBet += m;
 				pTaiXiu->MySelect();
 			}
-
-			pTaiXiu->SetTotalBet(atol(info.at(1).c_str()));
+//
+            int totalBetValue = atol(info.at(1).c_str());
+            std::string coin = this->SelectCoinValue(totalBetValue, 1);
+            
+            //Lay src cua coin
+            std::string src = "";
+            for (int j = 0; j < this->arrCoinBetted.size(); ++j) {
+                TaiXiuCoin* pCoin = this->arrCoinBetted.at(j);
+                if (pCoin->GetType() == coin) {
+                    src = pCoin->GetValue().imgnormal;
+                    break;
+                }
+            }
+            
+            Vec2 p = pTaiXiu->GetWorldPos();
+            p.x =( p.x) +rand() % 50;
+            p.y =( p.y - 20) +rand() % 50;
+            
+            ImageView* imgCoin = ImageView::create();
+            imgCoin->loadTexture(src);
+            imgCoin->setScale(SCALE_COIN_TAI_XIU);
+            imgCoin->setPosition(Vec2(p.x, p.y));
+            imgCoin->setLocalZOrder(1000);
+            this->rootNode->addChild(imgCoin);
+            
+            this->ArrayListChipAddFromHistory.push_back(imgCoin);
+//
+			pTaiXiu->SetTotalBet(totalBetValue);
 			pTaiXiu->SetPlayerBet(atol(info.at(2).c_str()));
-			pTaiXiu->ExecuteRefresh();
+			//pTaiXiu->ExecuteRefresh();
 
 		}
 		catch (std::out_of_range& e) {
@@ -1717,6 +1937,13 @@ void LayerGameTaiXiu::ReloadGameWhenReturn(string& gbt) {
 	}
 
 	arrGbt.clear();
+}
+void LayerGameTaiXiu::setStateButtonBet(int _tag){
+    
+}
+
+void LayerGameTaiXiu::updateInfoMe(){
+    
 }
 
 void LayerGameTaiXiu::DisplayInfoMoney(const long& tienconlai, const long& dadatcuoc){
@@ -1769,7 +1996,8 @@ void LayerGameTaiXiu::SetRoomConfig()
 				this->ArrListValueBet.push_back(this->ArrListValueBetDefault.at(i));
 			}
 		}
-
+        this->initListCoin();
+//        this->SelectCoin(this->playerInfo->SoTienThuc);
 	}
 }
 
@@ -1817,6 +2045,16 @@ void LayerGameTaiXiu::updateToNextTurn(float dt){
 }
 
 void LayerGameTaiXiu::ResetGame() {
+    this->resultDice1->setVisible(false);
+    this->resultDice2->setVisible(false);
+    this->resultDice3->setVisible(false);
+    for (int i = 0; i < this->ArrayListChipAddFromHistory.size(); i++){
+        ImageView* image = (ImageView* ) this->ArrayListChipAddFromHistory.at(i);
+        image->removeFromParent();
+    }
+    
+    this->ArrayListChipAddFromHistory.clear();
+    
 	for (int i = 0; i < this->arrBet.size(); ++i){
 		TaiXiuBet* pTaiXiu = this->arrBet.at(i);
 		pTaiXiu->Reset();
@@ -1852,6 +2090,8 @@ void LayerGameTaiXiu::initPlayerInfo() {
 			boost::shared_ptr<UserVariable> amf = mySelf->GetVariable("amf");
 			if (amf != NULL){
 				this->playerInfo->initMoney((long)(*amf->GetDoubleValue()));
+                //Select Coin
+                this->SelectCoin((*amf->GetDoubleValue()));
 			}
 		}
 	}
@@ -1861,6 +2101,7 @@ void LayerGameTaiXiu::initPlayerInfo() {
 			boost::shared_ptr<UserVariable> amf = mySelf->GetVariable("amfs");
 			if (amf != NULL){
 				this->playerInfo->initMoney((long)(*amf->GetDoubleValue()));
+                this->SelectCoin((*amf->GetDoubleValue()));
 			}
 		}
 	}
@@ -1911,6 +2152,35 @@ void LayerGameTaiXiu::updateEvent(float dt){
 		return;
 
 	this->mQueueMsg->run();
+}
+
+void LayerGameTaiXiu::createListCoinBetted(){
+//    TaiXiuCoin* a =   new TaiXiuCoin1(nullptr, nullptr, BET_VALUE_1, nullptr);
+//    TaiXiuCoin* a1 = new TaiXiuCoin100(nullptr, nullptr, BET_VALUE_100, nullptr);
+//    TaiXiuCoin* a2 = new TaiXiuCoin500(nullptr, nullptr, BET_VALUE_500, nullptr);
+//    TaiXiuCoin* a3 = new TaiXiuCoin1K(nullptr, nullptr, BET_VALUE_1K, nullptr);
+//    TaiXiuCoin* a4 = new TaiXiuCoin2K(nullptr, nullptr, BET_VALUE_2K, nullptr);
+//    TaiXiuCoin* a5 = new TaiXiuCoin5K(nullptr, nullptr, BET_VALUE_5K, nullptr);
+//    TaiXiuCoin* a6 = new TaiXiuCoin10K(nullptr, nullptr, BET_VALUE_10K, nullptr);
+//    TaiXiuCoin* a7 = new TaiXiuCoin50K(nullptr, nullptr, BET_VALUE_50K, nullptr);
+//    TaiXiuCoin* a8 = new TaiXiuCoin100K(nullptr, nullptr, BET_VALUE_100K, nullptr);
+//    TaiXiuCoin* a9 = new TaiXiuCoin500K(nullptr, nullptr, BET_VALUE_500K, nullptr);
+//    TaiXiuCoin* a10 = new TaiXiuCoin1M(nullptr, nullptr, BET_VALUE_1M, nullptr);
+//    TaiXiuCoin* a11 = new TaiXiuCoin5M(nullptr, nullptr, BET_VALUE_5M, nullptr);
+    
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_1, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_100, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_500, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_1K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_2K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_5K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_10K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_50K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_100K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_500K, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_1M, 0));
+    this->arrCoinBetted.push_back(TaiXiuCoinFactory::CreateTaiXiuCoin(nullptr, "", BET_VALUE_5M, 0));
+    
 }
 
 void LayerGameTaiXiu::CallBackResult(Ref *pSend){

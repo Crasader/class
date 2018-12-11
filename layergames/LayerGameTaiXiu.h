@@ -15,6 +15,7 @@
 #include "QueueTaiXiu.h"
 #include "../layers/LayerPopupCuaHang.h"
 #include "../layers/LayerPopupDoiMoc.h"
+#include "../layers/LayerChatGame.h"
 
 using namespace cocos2d::ui;
 USING_NS_CC;
@@ -35,7 +36,7 @@ public:
     void OnButtonHistoryClick(Ref *sender,  ui::Widget::TouchEventType pType);
     void OnButtonTopWinClick(Ref *sender,  ui::Widget::TouchEventType pType);
     void OnBtnHuongDanChan(Ref *sender,  ui::Widget::TouchEventType pType);
-
+    
     //Listen Server Event
     void OnExtensionResponse(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
     void OnSmartFoxUserVariableUpdate(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
@@ -43,9 +44,11 @@ public:
     void OnSmartFoxPublicMessage(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
     void OnSmartFoxConnectionLost(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
     void OnSmartFoxUserExitRoom(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
+    void OnSmartFoxRoomJoin(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
     void OnSmartFoxUserCountChange(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
     void OnSmartFoxPingPong(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent);
 
+    
     //Execute Server Event
     void event_EXT_EVENT_START();
     void event_EXT_EVENT_END();
@@ -74,6 +77,13 @@ public:
 
 private:
 
+    void setStateButtonBet(int _tag);
+    void onBtnXepHang(Ref* pSender);
+    void onBtnChuyenDongTien(Ref* pSender);
+    void updateInfoMe();
+    
+    
+    
     Size SizeAdd;
 
     float press;
@@ -81,7 +91,9 @@ private:
 
     std::vector<TaiXiuBet*>  arrBet;
     std::vector<TaiXiuCoin*> arrCoin;
-
+    
+    std::vector<TaiXiuCoin*> arrCoinBetted;
+    
     std::string MyAI;
     boost::shared_ptr<ISFSObject> param;
 
@@ -104,6 +116,7 @@ private:
 
     Text* txtTimer;
 
+    LayerChatGame * chat;
     //
     Node* rootNode;
 
@@ -114,12 +127,15 @@ private:
     int         TimerCountDown;
     int         TimerCountNextTime;
 
+    Button* btnChuyenDongTien;
+    int currBetvalue;
+    
     std::string CurrentBetValue;
     bool        CurrentGameState;
 
     int BetweentwoPlayTime;
     int PlayTurnTime;
-
+    int currTypeMoney = 0;
     int CountSizeDatCuoc;
     std::vector<std::string> arrTextHayDatCuoc;
     Label* HayDatCuoc;
@@ -127,6 +143,7 @@ private:
     std::vector<std::string> listHistory;
     std::vector<std::string> listTopWinner;
 
+    bool isJoin = false;
     Label* lblTimer;
     Label* lblCountNextTime;
 
@@ -138,11 +155,14 @@ private:
     PlayerTaiXiuInfo* playerInfo;
     QueueTaiXiu* mQueueTaiXiu;
 
+    vector<CircleAvatar*> listAvatar;
+    
     std::string rg;
     std::string rt10;
 
 private:
     void ResetGame();
+    void createListCoinBetted();
     string GetUrlXiNgau(const int& number);
 
     void UpdateHayDatcuoc(float dt);
@@ -177,6 +197,7 @@ private:
     void Update5sStep(float dt);
 	void processAnimationWin(Vec2 _dest, Vec2 _pos);
 
+    void showChatByName(string nameChat, string message);
     struct BtnCoin{
         Button* btn;
         int tag;
@@ -186,11 +207,13 @@ private:
                          
     std::vector<BtnCoin> ArrayListCoinFromStudio;
 
+    std::vector<ImageView* > ArrayListChipAddFromHistory;
+    
     void initPlayerInfo();
     void initListCoin();
 
     void CallBackFromAnim();
-
+    
 };
 
 #endif // LAYERGAMETAIXIU_H

@@ -12,8 +12,7 @@
 #include "json/document.h"
 #include "json/writer.h"
 #include "json/stringbuffer.h"
-#include <fstream>
-using std::fstream;
+
 using namespace  rapidjson;
 using namespace cocos2d;
 using namespace std;
@@ -21,11 +20,15 @@ using namespace std;
 class readJSON{
 public:
 static void createJSON(std::vector<std::string> data){
+    rapidjson::Document writedoc;
+    writedoc.SetObject();
+    rapidjson::Document::AllocatorType& allocator = writedoc.GetAllocator();
     rapidjson::Value array(rapidjson::kArrayType);
-    Document d;
-    d.SetObject();
-    rapidjson::Document::AllocatorType& allocator = d.GetAllocator();
+   
+    rapidjson::Value object(rapidjson::kObjectType);
+    
     std::vector<std::string> datas = data;
+    
     for(int i = 0; i<datas.size();i++)
     {
         
@@ -33,41 +36,30 @@ static void createJSON(std::vector<std::string> data){
         rapidjson::Value vMemberName(rapidjson::kStringType);
         vMemberName.SetString(datas.at(i).c_str(), strlen(datas.at(i).c_str()));
        // log("i: %d",i);
-        if (i==0)
+        if (i%2==0)
         { 
-            d.AddMember("packageUrl", vMemberName, allocator);
+            object.AddMember("date", vMemberName, allocator);
             //array.PushBack(object, allocator);
         }
-        if (i==1)
+        else
         {
-            d.AddMember("remoteManifestUrl", vMemberName, allocator);
-            //array.PushBack(object, allocator);
-        }
-        if (i==2)
-        {
-            d.AddMember("remoteVersionUrl", vMemberName, allocator);
-            //array.PushBack(object, allocator);
-        }
-        if (i==3)
-        {
-            d.AddMember("version", vMemberName, allocator);
-            //array.PushBack(object, allocator);
-        }
-        if (i==4)
-        {
-            d.AddMember("engineVersion", vMemberName, allocator);
-            //array.PushBack(object, allocator);
+            object.AddMember("message", vMemberName, allocator);
+            array.PushBack(object, allocator);
+            object = rapidjson::Value(rapidjson::kObjectType);
+          //  object.Empty();
         }
         
     }
     
     
     
+    writedoc.AddMember("notification", array, allocator);
     StringBuffer buffer;
     rapidjson::Writer<StringBuffer> writer(buffer);
-    d.Accept(writer);
+    writedoc.Accept(writer);
     
-    auto path = FileUtils::getInstance()->fullPathForFilename("localedata/project.manifest");
+    auto path = FileUtils::getInstance()->getWritablePath();
+    path.append("notification.json");
     FILE* file = fopen(path.c_str(), "wb");
     if(file)
     {

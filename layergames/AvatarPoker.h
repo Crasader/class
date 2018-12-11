@@ -11,7 +11,7 @@ private:
     Sprite* flag;
     Sprite* typePlayer;
     Sprite* betType;
-
+    
 public:
     ~AvatarPoker();
     AvatarPoker();
@@ -35,6 +35,10 @@ public:
 
     virtual void showChat(string& mess);
     int TypeBet = -1;
+    
+    void showLoseEffect();
+    void showNormalEffect();
+    void showEffectWin();
 };
 
 #endif // AvatarPoker_H

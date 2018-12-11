@@ -102,15 +102,17 @@ bool SceneManager::init()
 	//        vector<string> searchPaths;
 	//        searchPaths.push_back("avatars");
 	//        CCFileUtils::getInstance()->setSearchPaths(searchPaths);
+    
+    //Nếu tất cả là false => thì sẽ là naga.
     //anhnt change version
     this->isNagaCard = false;
-    this->isNagaWin = true;
-    this->isNagaNew = false; //Reahu
+    this->isNagaWin = false;
+    this->isNagaNew = false;
     this->isMegaWin = false;
     this->huPoker = 672384;
     this->huTaiXiu = 767123;
     //anhnt download store set true, else set false
-    this->setIsFlagStore(true);
+    this->setIsFlagStore(false);
     UserDefault *def = UserDefault::getInstance();
     def->setBoolForKey("sound", false);
 //    switch(CCApplication::sharedApplication()->getCurrentLanguage())
@@ -130,8 +132,7 @@ bool SceneManager::init()
     //def->setIntegerForKey("lang", 1);
     //anhnt china
     currLang = 2;
-    //VN
-//    currLang = 0;
+    
     vector<string> searchPaths;
     isShouldAuto = true;
     dataManager.getAppConfig().list_game = "112_true;128_true;137_true;139_true;140_true;114_true;250_true;138_dis";//
@@ -201,24 +202,6 @@ bool SceneManager::init()
     searchPaths.push_back("res_extend"+langfolder);
     searchPaths.push_back("design/ResBautom");
     searchPaths.push_back("Music");
-
-    searchPaths.push_back("stars");
-    
-//    searchPaths.push_back("airplan/font");
-//    searchPaths.push_back("airplan/sound");
-//    searchPaths.push_back("airplan/ui");
-//    searchPaths.push_back("airplan");
-    
-    
-//    searchPaths.push_back("animal/animal");
-//    searchPaths.push_back("animal/imgAchie");
-//    searchPaths.push_back("animal/bg");
-//    searchPaths.push_back("animal/res");
-//    searchPaths.push_back("animal/res/Font");
-//    searchPaths.push_back("animal/Common");
-//    searchPaths.push_back("Music"
-//    );
-    
     
     FileUtils::getInstance()->setSearchPaths(searchPaths);
     
@@ -392,23 +375,13 @@ void SceneManager::flagStore(string listFlagStore){
     
 #endif
 #if(CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-    //ThaoHX => android set thành false => k fake game
-    this->setIsFlagStore(false);
     for (int i = 0; i < vsAndroid.size(); i++) {
         if (strcmp(vsAndroid[i].c_str(), dataManager.getAppConfig().version_android.c_str()) == 0){
             this->setIsFlagStore(false);
         }
     }
 #endif
-    
-   
    // if (LayerLoadingStore::getSingleton())
-    bool isDownload = UserDefault::getInstance()->getBoolForKey("isdownload", false);
-    UserDefault::getInstance()->flush();
-    
-    if (isDownload){
-        this->setIsFlagStore(false);
-    }
     LayerLoadingStore::getSingleton().startDownloadResouces();
     
 }
@@ -1500,7 +1473,9 @@ void SceneManager::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost::shar
 	}
 	else
 	{
-		this->gotoGame(gameIDParse);
+       // if(this->nGameID != kGameXiTo && this->nGameID != kGamePoker){
+            this->gotoGame(gameIDParse);
+     //   }
 	}
 }
 
@@ -1610,13 +1585,13 @@ void SceneManager::OnSmartFoxUserExitRoom(unsigned long long ptrContext, boost::
 	if (ptrNotifiedUser->IsItMe()){
 		setAutoCreateRoom(false);
 		this->setRejoinInfo(RejoinInfoStruct());
-		if (getGameID() == kGameTaiXiu || getGameID() == kGameQuayThuong || currGameID == 0 || currGameID == -1) {
+		if ( getGameID() == kGameQuayThuong || currGameID == 0 || currGameID == -1) {
             SceneMain::getSingleton().prepareToPickGame();
 
 			gotoMain();
 		}
 		//update 3/8
-		else if (currGameID == kGameXocDia || currGameID == kGameBauTom || currGameID == kGameSlot){
+		else if (currGameID == kGameXocDia || currGameID == kGameBauTom || currGameID == kGameSlot|| currGameID == kGameTaiXiu){
             if (this->getIsChuyenTab()) return;
             if (getCurrRoomType() == -1){
 				gotoMain();
@@ -2415,8 +2390,20 @@ void SceneManager::onHttpRequestCompleted(cocos2d::network::HttpClient *sender, 
 			}
             if (readdoc.HasMember("list_game3"))
             {
-                string _list_game = readdoc["list_game3"].GetString();
-                dataManager.getAppConfig().list_game = _list_game;
+                #if(CC_TARGET_PLATFORM==CC_PLATFORM_IOS)
+                    string _list_game = readdoc["list_game3"].GetString();
+//                string _list_game = readdoc["list_game_and"].GetString();
+                    dataManager.getAppConfig().list_game = _list_game;
+                #endif
+                
+            }
+            
+            if (readdoc.HasMember("list_game_and"))
+            {
+                #if(CC_TARGET_PLATFORM==CC_PLATFORM_ANDROID)
+                    string _list_game = readdoc["list_game_and"].GetString();
+                    dataManager.getAppConfig().list_game = _list_game;
+                #endif
             }
             
             if (this->isNagaWin){
@@ -2424,7 +2411,12 @@ void SceneManager::onHttpRequestCompleted(cocos2d::network::HttpClient *sender, 
                 {
                     string _list_game = readdoc["list_game_bvnew"].GetString();
                     dataManager.getAppConfig().list_game = _list_game;
+                    
                 }
+            }
+            if (readdoc.HasMember("lst_game_new")){
+                string _list_new_game = readdoc["lst_game_new"].GetString();
+                dataManager.getAppConfig().list_new_game = _list_new_game;
             }
             
 			if (readdoc.HasMember("hidefb"))
@@ -3407,41 +3399,17 @@ void SceneManager::onScheduleGetConfig(float dt)
 	//this->showLoading(5);
 }
 void SceneManager::showPopupFailed(int tag){
-    
-    bool isDownload = UserDefault::getInstance()->getBoolForKey("isdownload", false);
-    
-    if (!isDownload){
-        LayerLoadingStore::getSingleton().startDownloadResouces();
-        return;
-    }
-    
     auto _currScene = Director::getInstance()->getRunningScene();
     if (!_currScene) return;
     SceneManager::getSingleton().hideLoading();
     _currScene->removeChildByTag(24);
     LayerPopupThongBao* layerPopup = LayerPopupThongBao::create();
     layerPopup->setCallBackFromButton(this, callfuncO_selector(SceneManager::layerPopupThongBaoCallBack2), tag);
-    string title = dataManager.GetSysString(141);
-    string content = dataManager.GetSysString(623);
-   
-    
-    if (title == ""){
-        title = "ប្រកាស";
-    }
-    if (content == ""){
-        content = "មានកំហុសក្នុងការជួសជុលលើផ្លូវអីនធើណេត។សូមមេត្តាពិនិត្យលើបណ្តាញដែលឆ្លកាត";
-    }
-   
-    layerPopup->setMessage(title);
-    layerPopup->setContentMess(content);
+    layerPopup->setMessage(dataManager.GetSysString(141));
+    layerPopup->setContentMess(dataManager.GetSysString(623));
     layerPopup->setPopupClose();
     layerPopup->setTag(24);
-    layerPopup->setEndGameWhenCancle();
     _currScene->addChild(layerPopup,5000);
-    if (layerPopup->getBtnOk()->getTitleText() == ""){
-        layerPopup->getBtnOk()->setTitleText("យល់ព្រម");
-        layerPopup->getBtnHuy()->setTitleText("ចេញ");
-    }
     SceneManager::getSingleton().hideLoading();
 }
 void SceneManager::layerPopupThongBaoCallBack2(Ref* pSender){
@@ -3540,7 +3508,7 @@ void SceneManager::connect2Server(float dt)
 	//sip = "sv.baimoc.com";
     //anhnt only for test ip
     //sip = "sv.nagaclub.net";
-    //sip = "203.162.166.162@9922";
+    sip = "203.162.166.162@9922";
     //sip = "13.251.217.47@9922";
     //sip = "2406:da18:400:4a00:25ac:a05e:e9ba:ee6f";
     //sip = "bv.baivip.net";

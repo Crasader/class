@@ -255,6 +255,19 @@ private:
     
     Layout* pnlAuto;
     vector<Button*> lstBtnAuto;
+    
+    vector<ImageView*> lstGlow;
+    
+    Label* lblVicType;
+    ImageView *bgVicType;
+    
+    void showVictory(const string& type);
+    void removeVictory();
+    void resetAvatarPlayer();
+    
+    void removeAllGlow();
+    
+    double mucCuocMin = 200;
 };
 
 #endif /* defined(__iCasinov2__XiTo__) */

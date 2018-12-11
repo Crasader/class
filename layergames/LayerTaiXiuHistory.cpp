@@ -176,7 +176,7 @@ cocos2d::extension::TableViewCell* LayerTaiXiuHistory::tableCellAtIndex(cocos2d:
 
     try {
         if (atoi(info.at(0).c_str()) == atoi(info.at(1).c_str()) && atoi(info.at(0).c_str()) == atoi(info.at(2).c_str())) {
-            str = "Bão";
+            str = dataManager.GetSysString(1048);
         }
         else {
             if (val >= 4 && val <= 10) {

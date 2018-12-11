@@ -873,9 +873,9 @@ void SceneMain::logOut(){
         login->setTag(this->tagLogin);
         this->addChild(login, 10000);
         if (!SceneManager::getSingleton().isNagaNew){
-        mLayerMainBottom->logOut();
-        mLayerMainBottom->hideTXMenu();
-    }
+            mLayerMainBottom->logOut();
+            mLayerMainBottom->hideTXMenu();
+        }
         else{
             this->removeChildByTag(this->tagMainBottom);
             mLayerMainBottom = LayerMainBottom::create();
@@ -979,9 +979,7 @@ void SceneMain::logInDone(){
         SceneManager::getSingleton().gotoPickGame(kGameCoTuong);
         return;
     }
-#if(CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-    IOS::askPushNotificationSetting();
-#endif
+    
 //    //only for china
 //    this->prepareToPickGame();
 //    this->currentLayer = this->typelayerGame;

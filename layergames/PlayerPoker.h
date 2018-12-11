@@ -42,6 +42,8 @@ protected:
 
     vector<Label*>arrAnimMoney;
 
+    
+    vector<ImageView*> lstGlow;
 protected:
     void RestoreCard(string &listcards, bool hasopen);
     void ShowMoneyCallFunc(Ref *sender, std::string data);
@@ -108,7 +110,10 @@ public:
     virtual void RestoreListCard(std::string& listcards, bool hasopen) = 0;
     virtual void removeChip() = 0;
     virtual void moveChipToPos() = 0;
-
+    
+    virtual void ShowCardLose() = 0;
+    void removeCardFromParent(Card *card);
+    void removeAllGlow();
 };
 
 class PlayerPokerIsMe : public PlayerPoker
@@ -126,7 +131,7 @@ public:
     void MoveDealCard(const int& idCard);
     void RestoreListCard(std::string& listcards, bool hasopen);
     void UpBai();
-
+    void ShowCardLose();
     //
     void CreateFrameBet(const float&x, const float& y, const int& sign);
     void SetBet(const long& bettype, const double& betvalues, int pos);
@@ -137,6 +142,9 @@ public:
     void moveChipToPos();
     // Set tien to truoc server.
     void SetBetBeforeServer(const double& bet);
+    
+    void removeCardFromParent(Ref *sender, Card *card);
+    void removeAllGlow();
 };
 
 class PlayerPokerNormal : public PlayerPoker{
@@ -144,6 +152,7 @@ private:
     FrameBet* frameBet;
     vector<Sprite*> lstChip;
 
+    
 public:
     PlayerPokerNormal();
     ~PlayerPokerNormal();
@@ -152,13 +161,17 @@ public:
     void MoveDealCard(const int& idCard);
     void RestoreListCard(std::string& listcards, bool hasopen);
     void UpBai();
-
+    void ShowCardLose();
     //
     void CreateFrameBet(const float&x, const float& y, const int& sign);
     void SetBet(const long& bettype, const double& betvalues, int pos);
     void HideFrameBet();
     void removeChip();
     void moveChipToPos();
+  
+    void removeCardFromParent(Ref *sender, Card *card);
+    void removeAllGlow();
+    
     
 };
 

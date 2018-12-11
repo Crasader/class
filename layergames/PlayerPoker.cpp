@@ -74,7 +74,8 @@ void PlayerPoker::AddCards(Card *pCard)
 
 void PlayerPoker::RemoveAllCards()
 {
-	if (0 == this->ArrayCards.size()) return;
+	if (0 == this->ArrayCards.size())
+        return;
 	for_each(this->ArrayCards.begin(), this->ArrayCards.end(), std::bind2nd(mem_fun(&Card::removeFromParentAndCleanup), true));
 	this->ArrayCards.clear();
 	//An frame bet
@@ -94,6 +95,36 @@ void PlayerPoker::RemoveAllCards()
 	}
 	this->arrAnimMoney.clear();
 }
+void PlayerPoker::removeAllGlow(){
+//    for (int i = 0; i < this->lstGlow.size(); i++){
+//        this->lstGlow[i]->removeFromParent();
+//    }
+//    this->lstGlow.clear();
+}
+
+void PlayerPoker::ShowCardLose(){
+    for (int i = 0; i < this->ArrayCards.size(); ++i){
+        try {
+            Card* pCard = this->ArrayCards.at(i);
+            pCard->setColor(Color3B(150, 150, 150));
+        }
+        catch (std::out_of_range& e) {
+            log("out of range: %s", e.what());
+        }
+        catch (std::exception& e) {
+            log("exception: %s", e.what());
+        }
+        catch (...) {
+        }
+    }
+}
+void PlayerPokerIsMe::ShowCardLose(){
+    PlayerPoker::ShowCardLose();
+}
+
+void PlayerPokerNormal::ShowCardLose(){
+    PlayerPoker::ShowCardLose();
+}
 
 void PlayerPoker::ReceiveCardFirst()
 {
@@ -102,10 +133,17 @@ void PlayerPoker::ReceiveCardFirst()
 	pCard->SetScaleCard(this->WithOrig / pCard->getContentSize().width, this->HeiOrig / pCard->getContentSize().height);
 	pCard->setPosition(Vec2((WIDTH_DESIGN >> 1), HEIGHT_DESIGN /2+150));
 	pCard->setVisible(true);
-	this->addChild(pCard);
+    pCard->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+    //Set 2 las ng
+    if (this->ArrayCards.size()==0){
+        pCard->setRotation(-15);
+    }else{
+        pCard->setRotation(15);
+    }
+	this->addChild(pCard, 100 + (this->ArrayCards.size() * 20));
 
-	MoveBy *newTo = MoveTo::create(0.1, Vec2(this->LeftCard + this->ArrayCards.size() * this->WidtdCard, this->BottomCard));
-	ScaleBy* scaleTo = ScaleBy::create(0.1, this->WidtdCard / this->WithOrig, this->HeightCard / this->HeiOrig);
+	MoveBy *newTo = MoveTo::create(0.3, Vec2(this->LeftCard, this->BottomCard));
+	ScaleBy* scaleTo = ScaleBy::create(0.3, this->WidtdCard / this->WithOrig, this->HeightCard / this->HeiOrig);
 
 	this->ArrayCards.push_back(pCard);
 	pCard->runAction(newTo);
@@ -148,7 +186,9 @@ void PlayerPoker::RestoreCard(string &listcards, bool hasopen)
                 pCard1->autorelease();
                 pCard1->SetScaleCard(this->WidtdCard / pCard1->getContentSize().width, this->HeightCard / pCard1->getContentSize().height);
                 pCard1->setPosition(this->PosCard());
+                pCard1->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
                 pCard1->setVisible(true);
+                pCard1->setRotation(-15 + (i*30));
                 this->addChild(pCard1);
                 this->ArrayCards.push_back(pCard1);
             }else{
@@ -159,6 +199,8 @@ void PlayerPoker::RestoreCard(string &listcards, bool hasopen)
                 pCard->setPosition(this->PosCard());
                 pCard->SetID(idcard);
                 pCard->setVisible(true);
+                pCard->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+                pCard->setRotation(-15 + (i*30));
                 this->addChild(pCard);
                 this->ArrayCards.push_back(pCard);
             }
@@ -268,7 +310,11 @@ bool PlayerPoker::CheckCardRunning()
 
 Vec2 PlayerPoker::PosCard()
 {
-	return Vec2(this->LeftCard + (this->ArrayCards.size() * this->WidtdCard ), this->BottomCard);
+//    return Vec2(this->LeftCard + (this->ArrayCards.size() * this->WidtdCard ), this->BottomCard);
+
+//Sửa vị trí bài
+    return Vec2(this->LeftCard, this->BottomCard);
+
 }
 
 void PlayerPoker::SetIdListCards(string &lc)
@@ -280,7 +326,7 @@ void PlayerPoker::SetIdListCards(string &lc)
 				int id = atoi(arrID.at(i).c_str());
 				Card* pCard = this->ArrayCards.at(i);
 				pCard->SetID(id);
-				pCard->initWithSpriteFrameName(XiToHelper::FindTypeCardPoker(id));
+				pCard->setSpriteFrame(XiToHelper::FindTypeCardPoker(id));
 			}
 			catch (std::out_of_range& e) {
 				log("out of range: %s", e.what());
@@ -296,8 +342,39 @@ void PlayerPoker::SetIdListCards(string &lc)
 
 void PlayerPoker::DisplayValueListCards(string &lc)
 {
-	if (this->IsFold)
-		return;
+    if (this->IsFold)
+        return;
+    if (0 != lc.compare("")) {
+        vector<string> arrID = mUtils::splitString(lc, ',');
+        
+        for (int j = 0; j < this->ArrayCards.size(); j++){
+            //Bôi đen cây k dc chọn show.
+            auto card = this->ArrayCards[j];
+            card->setColor(Color3B(150, 150, 150));
+            
+            for(int i = 0; i < arrID.size(); i++){
+                if (this->ArrayCards[j]->GetID() == atoi(arrID[i].c_str())) {
+                    auto card = this->ArrayCards[j];
+                    card->setColor(Color3B(250, 250, 250));
+                    auto a = card->getSize();
+                    auto scaled = card->GetScaleCard();
+                    auto rotate = card->getRotation();
+                    auto pos = card->getPosition();
+                    auto glow = ImageView::create("ResPoker/effect/glow.png");
+                    
+                    glow->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
+                    glow->setPosition(Vec2(card->getContentSize().width/2, card->getContentSize().height/2));
+//                    glow->setPosition(Vec2(pos.x - 2, pos.y - 20));
+//                    glow->setRotation(rotate);
+                    card->addChild(glow, 100 + (j*20));
+//                    glow->setScale(this->WidtdCard/106,this->HeightCard/142);
+                    this->lstGlow.push_back(glow);
+                    break;
+                }
+            }
+        }
+    }
+    
 //    if (0 != lc.compare("")) {
 //        vector<string> arrID = mUtils::splitString(lc, ',');
 //        for (std::vector<Card*>::iterator it = this->ArrayCards.begin(); it != this->ArrayCards.end(); ++it) {
@@ -338,7 +415,8 @@ void PlayerPoker::SetPosBeginCard(const float &left, const float &bottom)
 {
     Size pos = ChanUtils::getSizePos();
 	this->LeftCard = left;
-	this->BottomCard = bottom+pos.height;
+//    this->BottomCard = bottom+pos.height;
+    this->BottomCard = bottom;
 }
 
 Vec2 PlayerPoker::GetPosBeginCard()
@@ -426,13 +504,14 @@ void PlayerPoker::ShowMoney(const string &amf, bool b)
 		lbl = Label::createWithBMFont("font_lose-font.fnt", s);
 	}
 
-	lbl->setLocalZOrder(100);
+	lbl->setLocalZOrder(2000);
 	lbl->setAnchorPoint(Vec2(0, 0));
 
-	Vec2 p = Vec2(this->LeftCard - this->WidtdCard / 2, this->BottomCard - this->HeightCard / 2);
+	Vec2 p = Vec2(this->LeftCard - this->WidtdCard, this->BottomCard - this->HeightCard / 3);
+    
 
 	lbl->setPosition(p);
-	this->addChild(lbl);
+	this->addChild(lbl, 2000);
 
 	for (int i = 0; i < this->arrAnimMoney.size(); ++i) {
 		try {
@@ -468,6 +547,10 @@ void PlayerPoker::BoCuoc(){
 	this->lblVicType->setString(dataManager.GetSysString(511));
 	this->lblVicType->setPosition(this->GetVicTypePosition());
 	this->lblVicType->setVisible(true);
+    ///Ném card về phía dealer
+    
+    
+    
 }
 
 void PlayerPoker::ResetTurn()
@@ -495,18 +578,21 @@ bool PlayerPokerIsMe::init()
 
 int PlayerPokerIsMe::DisplayTwoCard(string& listdeal)
 {
+//    return 0;
 	vector<string> deal = mUtils::splitString(listdeal, ',');
 	try {
 		int id = atoi(deal.at(0).c_str());
 		log("id card 1 ======= %d", id);
 		Card *pXiTo1 = this->ArrayCards.at(0);
-		pXiTo1->initWithSpriteFrameName(XiToHelper::FindTypeCardPoker(id));
+        pXiTo1->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+		pXiTo1->setSpriteFrame(XiToHelper::FindTypeCardPoker(id));
 		pXiTo1->SetID(id);
 
 		id = atoi(deal.at(1).c_str());
 		log("id card 2 ======= %d", id);
 		Card *pXiTo2 = this->ArrayCards.at(1);
-		pXiTo2->initWithSpriteFrameName(XiToHelper::FindTypeCardPoker(id));
+        pXiTo2->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+		pXiTo2->setSpriteFrame(XiToHelper::FindTypeCardPoker(id));
 		pXiTo2->SetID(id);
 
 	}
@@ -537,6 +623,12 @@ void PlayerPokerIsMe::MoveDealCard(const int &idCard)
 	Card* card1st = this->ArrayCards.at(0);
 	Card* card2nd = this->ArrayCards.at(1);
 
+    //Set 2 las ng
+    card2nd->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+    card1st->setAnchorPoint(Vec2::ANCHOR_MIDDLE_BOTTOM);
+    card1st->setRotation(-15);
+    card2nd->setRotation(15);
+    
 	card1st->setColor(Color3B(250, 250, 250));
 	card2nd->setColor(Color3B(250, 250, 250));
 
@@ -598,20 +690,41 @@ void PlayerPokerIsMe::RefreshListCards(Ref* sender, std::string& listID){
 		}
 	}
 }
+//void LayerGameXocDia::AddCoinCallFunc2(Ref *sender, TaiXiuBet* data)
+void PlayerPokerIsMe::removeCardFromParent(Ref *sender, Card *card){
+    card->removeFromParent();
+}
 
 void PlayerPokerIsMe::SetBet(const long &bettype, const double &betvalues, int pos)
 {
+    
+    
+    this->IsFold = false;
 	this->CurrentTypeBet = (int)bettype;
 	this->CurrentValueBet = betvalues;
 
 	if (0 == bettype) {
 		//for_each(this->ArrayCards.begin(), this->ArrayCards.end(), std::bind2nd(mem_fun(&Card::setOpacity), 180));
 		for (int i = 0; i < this->ArrayCards.size(); ++i){
-			this->ArrayCards.at(i)->initWithSpriteFrameName("card_back.png");
+//            this->ArrayCards.at(i)
+            auto card = this->ArrayCards.at(i);
+//            card->initWithSpriteFrameName("card_back.png");
+            card->setColor(Color3B(150,150,150));
+            //Set remove Thaohx
+//            auto *moveToDealer = MoveTo::create(0.5, Vec2(960,800));
+            auto *scaleTo0 = ScaleBy::create(0.5, 0.9);
+//            auto spaw = Spawn::create(moveToDealer, scaleTo0, NULL);
+//            CallFuncN* callfun = CallFuncN::create(CC_CALLBACK_1(PlayerPokerIsMe::removeCardFromParent, this, card));
+//            auto sq = Sequence::create(spaw, callfun, NULL);
+            card->runAction(scaleTo0);
+//            this->ArrayCards.erase(this->ArrayCards.begin() + i);
+//            i--;
+            
+            
 		}
 		this->spFrameBetMe->setVisible(false);
 		this->lblVicType->setString(dataManager.GetSysString(230));
-
+        
 		this->IsFold = true;
 
 	}
@@ -775,14 +888,35 @@ void PlayerPokerNormal::CreateFrameBet(const float&x, const float& y, const int&
 	this->addChild(this->frameBet);
 }
 
+void PlayerPokerNormal::removeCardFromParent(Ref *sender, Card *card){
+    card->removeFromParent();
+}
+
 void PlayerPokerNormal::SetBet(const long &bettype, const double &betvalues, int pos)
 {
+    
+    
 	this->CurrentTypeBet = (int)bettype;
 	this->CurrentValueBet = betvalues;
 	if (0 == bettype) {
 		std::string back = "card_back.png";
-		for_each(this->ArrayCards.begin(), this->ArrayCards.end(), std::bind2nd(mem_fun(&Card::initWithSpriteFrameName), back));
-
+//        for_each(this->ArrayCards.begin(), this->ArrayCards.end(), std::bind2nd(mem_fun(&Card::initWithSpriteFrameName), back));
+        for (int i = 0; i < this->ArrayCards.size(); ++i){
+            auto card = this->ArrayCards.at(i);
+            card->initWithSpriteFrameName("card_back.png");
+            auto *moveToDealer = MoveTo::create(0.5, Vec2(960,800));
+            auto *scaleTo0 = ScaleBy::create(0.5, 0);
+            auto spaw = Spawn::create(moveToDealer, scaleTo0, NULL);
+            CallFuncN* callfun = CallFuncN::create(CC_CALLBACK_1(PlayerPokerNormal::removeCardFromParent, this, card));
+            auto sq = Sequence::create(spaw, callfun, NULL);
+            card->runAction(sq);
+            this->ArrayCards.erase(this->ArrayCards.begin() + i);
+            i--;
+        }
+        
+        
+        
+        
 		this->frameBet->setVisible(false);
 		this->lblVicType->setString(dataManager.GetSysString(230));
 
@@ -840,4 +974,13 @@ void PlayerPokerNormal::HideFrameBet()
 {
 	if (this->frameBet != NULL)
 		this->frameBet->setVisible(false);
+}
+
+
+void PlayerPokerNormal::removeAllGlow(){
+    PlayerPoker::removeAllGlow();
+}
+
+void PlayerPokerIsMe::removeAllGlow(){
+    PlayerPoker::removeAllGlow();
 }

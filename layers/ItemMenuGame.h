@@ -53,6 +53,7 @@ public:
     void playAnimationMB3();
     void playAnimationTCC();
     void showXD();
+    void showTXBig();
     string GetUrlXiNgau(int number);
     void showPrevMatchHis(string str);
     void animationBaDoi();
@@ -72,6 +73,12 @@ public:
     void reloadLang();
     void isLogon();
     void isLogout();
+    
+    
+    ///
+    void showNewGame(int gameID, vector<int> listNewGame);
+
+    
     virtual bool init();
     CREATE_FUNC(ItemMenuGame);
 
@@ -85,12 +92,14 @@ private:
     Layout* pnlTLMN;
     Layout* pnlSlot;
     Layout* pnlTX;
+    Layout* pnlTXBig;
     Layout* pnlCatte;
     Layout* pnlBaDoi;
     Layout* pnlMB;
     Layout* pnlXD;
     Layout* pnlTCC;
-
+    Layout* pnlNewGame;
+    
     ImageView* imgAnim;
     ThreadQueueMsg* mQueueMsg;
     int PlayTurnTime = 0;

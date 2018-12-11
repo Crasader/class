@@ -236,7 +236,7 @@ Vec2 TaiXiuBet::GetWorldPos(){
 	return pp;
 }
 Vec2 TaiXiuBet::getPointCoin(){
-    Size s;
+    Size s = Size(40,40);
     string betType = this->GetType();
     if (betType == BET_TYPE_CHAN || betType == BET_TYPE_LE){
         s = Size(130,100);

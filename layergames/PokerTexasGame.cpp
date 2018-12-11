@@ -87,23 +87,23 @@ bool PokerTexasGame::init() {
     Size _cardsizeMe = Size(86*1.5, 119*1.5);
 
     this->PlayerMe = PlayerPokerIsMe::create();
-    this->PlayerMe->SetPosBeginCard(890, 250);
+    this->PlayerMe->SetPosBeginCard(920, 170);
     this->PlayerMe->SetSizeCard(_cardsizeMe);
     
     this->PlayerLeftBottom = PlayerPokerNormal::create();
-    this->PlayerLeftBottom->SetPosBeginCard(360, (HEIGHT_DESIGN >> 1) - 110);
+    this->PlayerLeftBottom->SetPosBeginCard(400, (HEIGHT_DESIGN >> 1) - 150);
     this->PlayerLeftBottom->SetSizeCard(_cardsize);
     
     this->PlayerLeftTop = PlayerPokerNormal::create();
-    this->PlayerLeftTop->SetPosBeginCard(500, 830);
+    this->PlayerLeftTop->SetPosBeginCard(550, 780);
     this->PlayerLeftTop->SetSizeCard(_cardsize);
     
     this->PlayerRightTop = PlayerPokerNormal::create();
-    this->PlayerRightTop->SetPosBeginCard(WIDTH_DESIGN - 580, 830);
+    this->PlayerRightTop->SetPosBeginCard(WIDTH_DESIGN - 520, 780);
     this->PlayerRightTop->SetSizeCard(_cardsize);
     
     this->PlayerRightBottom = PlayerPokerNormal::create();
-    this->PlayerRightBottom->SetPosBeginCard(WIDTH_DESIGN - 450, (HEIGHT_DESIGN >> 1) - 120);
+    this->PlayerRightBottom->SetPosBeginCard(WIDTH_DESIGN - 400, (HEIGHT_DESIGN >> 1) - 180);
     this->PlayerRightBottom->SetSizeCard(_cardsize);
     
     this->PlayerMe->setAnchorPoint(Vec2::ZERO);
@@ -165,6 +165,37 @@ bool PokerTexasGame::init() {
             currMyMoney = *amf_ptr->GetDoubleValue();
         }
     }
+    
+    //ThaoHX
+    //Init Victory
+    this->bgVicType = ImageView::create("alert_poker.png");
+    this->bgVicType->setAnchorPoint(Vec2(0.5, 0.5));
+    this->bgVicType->setPosition(Vec2(960, 440));
+    this->lblVicType = Label::createWithSystemFont("","", 50);
+    this->lblVicType->setColor(Color3B::WHITE);
+    this->lblVicType->setAnchorPoint(Vec2(0.5, 0.5));
+    this->lblVicType->setPosition(Vec2(960, 440));
+    this->lblVicType->setScale(1.2);
+    this->lblVicType->setVisible(false);
+    this->addChild(this->bgVicType, 90);
+    this->addChild(this->lblVicType, 90);
+    this->bgVicType->setVisible(false);
+    
+    
+//    string money = "0";
+//    boost::shared_ptr<Room> room = GameServer::getSingleton().getSmartFox()->LastJoinedRoom();
+//    if (room != NULL && room->GetVariable("params") != NULL) {
+//        std::string paramString = *room->GetVariable("params")->GetStringValue();
+//        std::vector<std::string> arrInfo = mUtils::splitString(paramString, '@');
+//        if (arrInfo.size() > 0) {
+//            money = arrInfo.at(0);
+//            if (SceneManager::getSingleton().getGameID() == kGameTaiXiu || SceneManager::getSingleton().getGameID() == kGameXocDia)
+//                money = "0";
+//        }
+//        this->mucCuoc = atoi(money.c_str());
+//    }
+    
+    
     return true;
 }
 
@@ -537,17 +568,35 @@ void PokerTexasGame::OnButtonBetMauClick(Ref* pSender){
         this->slider->setPercent(100);
         return;
     }
+    double betFollow = 0;
+
+    
+
     for (int i = 0 ; i < this->lstMoneyMau.size(); i++){
+//        if (DTAG_BTN_POKER_FOLLOW == this->lstMoneyMau[i].tag){
+//            betFollow = this->lstMoneyMau[i].money;
+//        }
         if (tag == this->lstMoneyMau[i].tag ){
             this->currMoneyBet = this->lstMoneyMau[i].money;
         }
+//        if( DTAG_BTN_POKER_POT_HALF == this->lstMoneyMau[i].tag || DTAG_BTN_POKER_POT  == this->lstMoneyMau[i].tag){
+//            this->currMoneyBet += betFollow;
+//        }
     }
+    
+    // Nút min tag == nút theo
+    if (tag == DTAG_BTN_POKER_FOLLOW){
+        this->currMoneyBet = this->mucCuocMin;
+    }
+    
+    
     this->slider->setPercent((this->currMoneyBet - (this->currMinBet+this->currBetTable)*100)/(this->currMyMoney - (this->currMinBet+this->currBetTable)));
     this->txtMoneyToBtn->setString(mUtils::convertMoneyEx((long long)(this->currMoneyBet)));
     this->txtMoneyBetSlider->setString(mUtils::convertMoneyEx((long long)(this->currMoneyBet)));
 }
 void PokerTexasGame::resetBtnAuto(){
     for (int i = 0; i < this->lstBtnAuto.size(); i++){
+        
         if (this->lstBtnAuto[i]->getTag() == POKER_AUTO_FOLD){
             this->lstBtnAuto[i]->loadTextures(StringUtils::format("%s%sauto-fold-dis.png",PATH_POKER,SceneManager::getSingleton().getFolderLang().c_str()), StringUtils::format("%s%sauto-fold-en.png",PATH_POKER,SceneManager::getSingleton().getFolderLang().c_str()),StringUtils::format("%s%sauto-fold-en.png",PATH_POKER,SceneManager::getSingleton().getFolderLang().c_str()));
 
@@ -608,9 +657,11 @@ void PokerTexasGame::onBtnAutoClick(Ref *sender){
     boost::shared_ptr<IRequest> request(new ExtensionRequest(EXT_EVENT_AUTO_BET_REQ, param, lastRoom));
     GameServer::getSingleton().Send(request);
 }
+
 void PokerTexasGame::loadMoneyBetByButton(int type){
     
 }
+
 Button* PokerTexasGame::getButtonByTag(int tag){
     for (int i = 0 ; i < this->pArrayButton2.size();i++){
         if (this->pArrayButton2[i]->getTag() == tag)
@@ -988,30 +1039,38 @@ void PokerTexasGame::OnExtensionResponseProcess() {
     }else if (0 == cmd->compare(EXT_EVENT_TIP_DEAL_NOTIFY)){
         auto tipvl = this->param->GetDouble(EXT_FIELD_TIP_VAL);
         auto tipsmg = this->param->GetUtfString(EXT_FIELD_TIP_MSG);
+        boost::shared_ptr<string> uid = this->param->GetUtfString(EXT_FIELD_USERID);
         if (tipvl ){
             bool b_ret = true;
-            string money = "";
-            if (*tipvl > 0) {
-                money = "+";
-            }
-            else {
-                money = "-";
-                b_ret = false;
-            }
-        
+            string money = "-";
+//            if (*tipvl > 0) {
+//                money = "+";
+//            }
+//            else {
+//                money = "-";
+//                b_ret = false;
+//            }
             long ti = abs((long)(*tipvl));
             money += mUtils::convertMoneyEx(ti); // boost::to_string(ti);
         
-            PlayerPoker* p = this->GetPlayer(USER_ME);
-            if (p != NULL) {
-                p->ShowMoney(money, b_ret);
+//            PlayerPoker* p = this->GetPlayer(USER_ME);
+//            if (p != NULL) {
+//                p->ShowMoney(money, false);
+//            }
+            
+            //Show donate by user
+            int pos = this->GetPosPlayer(*uid);
+            PlayerPoker* player = this->GetPlayer(pos);
+            AvatarPoker *av = this->LayerAvatars->GetUserByPos(pos);
+            if (player != NULL){
+                player->ShowMoney(money, false);
             }
             
             for (int i = 0; i < 3;i++){
                 Sprite* chip = Sprite::create("zen-min.png");
                 this->addChild(chip);
-                chip->setPosition(Vec2(550, 270));
-                chip->runAction(Sequence::create(DelayTime::create(0.1*i), MoveTo::create(0.4, Vec2(960,600)),RemoveSelf::create(),NULL));
+                chip->setPosition(av->getPosition());
+                chip->runAction(Sequence::create(DelayTime::create(0.1*i), MoveTo::create(0.4, Vec2(960,800)),RemoveSelf::create(),NULL));
             }
             
         }
@@ -1024,6 +1083,8 @@ void PokerTexasGame::OnExtensionResponseProcess() {
     
     
 }
+
+
 void PokerTexasGame::event_EXT_EVENT_AUTO_BET_NOTIFY(){
     this->resetBtnAuto();
     this->pnlAuto->setVisible(true);
@@ -1032,6 +1093,8 @@ void PokerTexasGame::event_EXT_EVENT_AUTO_BET_NOTIFY(){
     }
     boost::shared_ptr<string> autobtlst = this->param->GetUtfString(EXT_FIELD_AUTOBET_LIST);
     if (autobtlst){
+        this->currTagAuto = -1;
+        
         auto lst = mUtils::splitString(*autobtlst, ',');
         for (int i = 0 ; i < lst.size();i++){
             for (int j = 0 ; j < this->lstBtnAuto.size();j++){
@@ -1077,15 +1140,23 @@ void PokerTexasGame::event_EXT_EVENT_DEAL_COMMON_CARD_NOTIF(){
     }
 }
 void PokerTexasGame::showCardCommon(Card *pCard){
-    float skewAmount = 17;
-    float kCardFlipTime = 0.15;
-    ActionInterval *firstSkew = SkewBy::create(kCardFlipTime, 0, skewAmount);
-    ActionInterval *instantFlipSkew = SkewTo::create(0, 0, -skewAmount);
-    ActionInterval *resetSkew = SkewTo::create(kCardFlipTime, 0, 0);
-        pCard->setVisible(true);
-    string str = XiToHelper::FindTypeCardPoker(pCard->GetID());
-    auto initFrame = CallFunc::create([pCard, str](){pCard->initWithSpriteFrameName(str.c_str()); });
-    pCard->runAction(Sequence::create(firstSkew, instantFlipSkew, initFrame, resetSkew, NULL));
+    if (pCard != NULL ){
+        float skewAmount = 17;
+        float kCardFlipTime = 0.15;
+        ActionInterval *firstSkew = SkewBy::create(kCardFlipTime, 0, skewAmount);
+        ActionInterval *instantFlipSkew = SkewTo::create(0, 0, -skewAmount);
+        ActionInterval *resetSkew = SkewTo::create(kCardFlipTime, 0, 0);
+            pCard->setVisible(true);
+        string str = XiToHelper::FindTypeCardPoker(pCard->GetID());
+        auto initFrame = CallFunc::create([pCard, str](){pCard->initWithSpriteFrameName(str.c_str()); });
+        
+        auto actionZoomIn = ScaleBy::create(0.2, 1.1);
+        auto actionZoomOut = ScaleBy::create(0.1, 0.9);
+        auto actionZoomDefault = ScaleBy::create(0.1, 1);
+    //    pCard->runAction();
+        pCard->runAction(Sequence::create(firstSkew, instantFlipSkew, initFrame, resetSkew,actionZoomOut, actionZoomIn, actionZoomDefault, NULL));
+    //    pCard->runAction(Sequence::create(firstSkew, instantFlipSkew, initFrame, resetSkew, NULL));
+    }
 }
 void PokerTexasGame::event_EXT_EVENT_SMALLBLIND_NOTIF(){
     boost::shared_ptr<string> uid = this->param->GetUtfString(EXT_FIELD_USERID);
@@ -1454,7 +1525,7 @@ void PokerTexasGame::event_EXT_EVENT_CHANGE_BALANCE_NOTIF() {
     boost::shared_ptr<double> amf = this->param->GetDouble(EXT_VAL_AMOUNT_BALANCE);
     boost::shared_ptr<long> cbt = this->param->GetInt(EXT_VAL_CBT);
     
-    this->LayerAvatars->StopAllTimer();
+    
     
     if (uid != NULL && amf != NULL){
         string money = "0";
@@ -1499,16 +1570,42 @@ void PokerTexasGame::event_EXT_EVENT_VICTORY_NOTIF() {
         
         int pos = this->GetPosPlayer(*uid);
         PlayerPoker* player = this->GetPlayer(pos);
+        AvatarPoker *avWin = this->LayerAvatars->GetUserByPos(pos);
         if (player != NULL){
+            
+            //Bôi đen card thua của player.
+            for (int i = 0; i < 5; i++ ){
+                PlayerPoker *pl = this->GetPlayer(i);
+                AvatarPoker *av = this->LayerAvatars->GetUserByPos(i);
+                if (player != pl && pl != NULL){
+//                if (pl != NULL){
+                    pl->ShowCardLose();
+                    av->showLoseEffect();
+                }
+            }
+            
+            //Show card win
             player->DisplayValueListCards(*lc);
+            
             player->HideFrameBet();
             
             string s = XiToHelper::GetTypeListCards(*vicType);
             if (0 == *vicType) {
                 s = dataManager.GetSysString(230);
             }
-            player->ShowVicType(s);
+            //ThaoHX Show Label Victory => sửa thành hiển thị victỏry ra giữa bàn.
+            this->showVictory(s);
+            
+            avWin->showEffectWin();
+            
+//            Thằng server
+            //Show victory in player.
+//            player->ShowVicType(s);
         }
+        
+        
+        
+//        this->
     }
 }
 void PokerTexasGame::displayCommonCard(string lc){
@@ -1519,7 +1616,15 @@ void PokerTexasGame::displayCommonCard(string lc){
     for (int i = 0 ; i < lstC.size();i++){
         for (int j = 0; j< this->lstCommonCard.size();j++){
             if (atoi(lstC[i].c_str())==this->lstCommonCard[j]->GetID()){
-                this->lstCommonCard[j]->setColor(Color3B::WHITE);
+                auto card =this->lstCommonCard[j];
+                card->setColor(Color3B::WHITE);
+                auto a = card->getSize();
+                auto pos = card->getPosition();
+                auto glow = ImageView::create("ResPoker/effect/glow.png");
+                glow->setScale(a.width/106,a.height/142);
+                glow->setPosition(pos);
+                this->addChild(glow);
+                this->lstGlow.push_back(glow);
             }
             
         }
@@ -1555,6 +1660,7 @@ void PokerTexasGame::event_EXT_EVENT_RAISE_NOTIF() {
     boost::shared_ptr<double> betvl = this->param->GetDouble("ttrnd");
     boost::shared_ptr<double> bettt = this->param->GetDouble(EXT_FIELD_BET_TOTAL);
     
+    this->LayerAvatars->StopAllTimer();
     string Uid_ = "";
     long Bet_ = -1;
     double BetValue = 0;
@@ -1856,7 +1962,7 @@ void PokerTexasGame::EventReJoinGame(string& roomInfo) {
                 int id = atoi(info[i].c_str());
                 Card *pCard = new Card("card_back.png");
                 pCard->autorelease();
-                pCard->initWithSpriteFrameName(XiToHelper::FindTypeCardPoker(id));
+                pCard->setSpriteFrame(XiToHelper::FindTypeCardPoker(id));
                 pCard->SetID(id);
                 //pCard->setScale(0.4);
                 pCard->setPosition(Vec2(960,900));
@@ -1980,7 +2086,7 @@ void PokerTexasGame::Chia2LaBaiDauTien_2(PlayerPoker* player, const int& totalch
         }
         else
         {
-            
+
         }
     }
 }
@@ -2064,6 +2170,7 @@ void PokerTexasGame::SetButtonBet(const string& uid, string& lsBet) {
         }
         this->pnlTo->setVisible(false);
         this->lstMoneyMau.clear();
+        this->currMinBet = 0;
         auto lstAllow = mUtils::splitString(lsBet,';');
         for (int i = 0 ; i < lstAllow.size(); i++){
             auto lst = mUtils::splitString(lstAllow[i], ':');
@@ -2091,6 +2198,7 @@ void PokerTexasGame::SetButtonBet(const string& uid, string& lsBet) {
         this->txtMoneyToBtn->setString(mUtils::convertMoneyEx(ToMoney));
         this->txtMoneyTheoBtn->setString(mUtils::convertMoneyEx(this->currMinBet));
         this->currMoneyBet = this->currMinBet+this->currBetTable;
+        this->mucCuocMin = currMoneyBet;
         for (int i = 0; i<lstAllow.size(); i++) {
             auto lst = mUtils::splitString(lstAllow[i], ':');
 //            if (atoi(lst[0].c_str()) == DTAG_BTN_POKER_BET_ALL)
@@ -2108,12 +2216,33 @@ void PokerTexasGame::SetButtonBet(const string& uid, string& lsBet) {
 
 void PokerTexasGame::ActionEndGame() {
     this->resetBtnAuto();
+    //ThaoHX
+    this->pnlAuto->setVisible(false);
     this->PlayerMe->RemoveAllCards();
     this->PlayerLeftBottom->RemoveAllCards();
     this->PlayerLeftTop->RemoveAllCards();
     this->PlayerRightBottom->RemoveAllCards();
     this->PlayerRightTop->RemoveAllCards();
     
+    
+    
+    //remove glow in card player:
+    
+    this->PlayerMe->removeAllGlow();
+    this->PlayerLeftBottom->removeAllGlow();
+    this->PlayerLeftTop->removeAllGlow();
+    this->PlayerRightBottom->removeAllGlow();
+    this->PlayerRightTop->removeAllGlow();
+    
+    this->removeAllGlow();
+    
+    //Remove lbl victory
+    this->removeVictory();
+    
+//    ThaoHX
+    //
+    this->resetAvatarPlayer();
+//
     
     this->PlayerMe->removeChip();
     this->PlayerLeftBottom->removeChip();
@@ -2466,22 +2595,22 @@ void PokerTexasGame::SetMapPlayer(string& listplayers) {
         }
         else if (i == (vt + 1) % 5)
         {
-            this->mapPlayers[player.at(1)] = USER_RIGHT_BOT;
+            this->mapPlayers[player.at(1)] = USER_LEFT_BOT;
             this->PlayerRightBottom->SetAI(player.at(1));
         }
         else if (i == (vt + 2) % 5)
         {
-            this->mapPlayers[player.at(1)] = USER_RIGHT_TOP;
+            this->mapPlayers[player.at(1)] = USER_LEFT_TOP;
             this->PlayerRightTop->SetAI(player.at(1));
         }
         else if (i == (vt + 3) % 5)
         {
-            this->mapPlayers[player.at(1)] = USER_LEFT_TOP;
+            this->mapPlayers[player.at(1)] = USER_RIGHT_TOP;
             this->PlayerLeftTop->SetAI(player.at(1));
         }
         else if (i == (vt + 4) % 5)
         {
-            this->mapPlayers[player.at(1)] = USER_LEFT_BOT;
+            this->mapPlayers[player.at(1)] = USER_RIGHT_BOT;
             this->PlayerLeftBottom->SetAI(player.at(1));
         }
         player.clear();
@@ -2528,4 +2657,59 @@ void PokerTexasGame::SetTotalMoney(const double& money){
         this->lblBetTotal->setString((dataManager.GetSysString(659)+" " + mUtils::convertMoneyEx((long)money)));
     }
     this->spFrameBetTotal->setVisible(true);
+}
+
+
+//ThaoHX
+
+void PokerTexasGame::showVictory(const string& type){
+//    if (this->IsFold)
+//    {
+//        this->lblVicType->setString(dataManager.GetSysString(230));
+//    }
+//    else
+//    {
+        this->lblVicType->setString(type);
+//    }
+    
+//    this->bgVicType->setPosition(this->GetVicTypePosition());
+//    this->lblVicType->setPosition(Point(this->bgVicType->getPositionX() + this->bgVicType->getContentSize().width / 2, this->bgVicType->getPositionY() + this->bgVicType->getContentSize().height / 2));
+    
+    
+    
+    
+    auto emitter = ParticleSystemQuad::create("highlight_noti.plist");
+    emitter->setAnchorPoint(Vec2::ANCHOR_MIDDLE);
+    emitter->setPosition(Vec2(960, 420));
+    emitter->setAutoRemoveOnFinish(true);
+    //            emitter->setLife(0.3);
+    //            emitter->setTotalParticles(5);
+    TextureCache* tc = Director::getInstance()->getTextureCache();
+    Texture2D* coin = tc->addImage("light_effect.png");
+    emitter->setTexture(coin);
+    this->addChild(emitter, 2000);
+    
+    
+    this->lblVicType->setVisible(true);
+    this->bgVicType->setVisible(true);
+}
+
+void PokerTexasGame::removeVictory(){
+    this->lblVicType->setVisible(false);
+    this->bgVicType->setVisible(false);
+}
+
+void PokerTexasGame::resetAvatarPlayer(){
+    for (int i = 0; i < 5; i++ ){
+        AvatarPoker *av = this->LayerAvatars->GetUserByPos(i);
+        av->showNormalEffect();
+    }
+}
+
+
+void PokerTexasGame::removeAllGlow() {
+    for (int i = 0; i < this->lstGlow.size(); i++){
+        this->lstGlow[i]->removeFromParent();
+    }
+    this->lstGlow.clear();
 }

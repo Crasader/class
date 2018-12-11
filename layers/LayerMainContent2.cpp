@@ -47,7 +47,7 @@ bool LayerMainContentNew2::init()
 	if (btnArrow2)
 	{
 		//btnArrow2->setVisible(false);
-		btnArrow2->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonArrow1, this));
+		btnArrow2->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonArrow2, this));
 	}
 
    // dataManager.getAppConfig().list_game = "112_true;139_true;128_true;140_true;250_true;138_dis;137_dis;100_dis";//
@@ -380,9 +380,11 @@ void LayerMainContentNew2::createListData()
 {
 
 	//string _listRoom = "100_true;113_true;111_true;112_true;102_true;109_true;116_false;103_false;114_false;115_false;117_false";
+//    112_true;128_true;137_true;139_true;140_true;114_true;250_true;138_dis
     this->lstIcons.clear();
     //anhnt only for test
-    string _listRoom = dataManager.getAppConfig().list_game;
+//    string _listRoom = dataManager.getAppConfig().list_game;
+    string _listRoom  = "112_true;128_true;137_true;113_true;139_true;114_true;250_true;138_true";
 	// 	if (SceneManager::getSingleton().getGameVersion() == GameVersion::p2)
 	// 		_listRoom = "112_true;113_true;111_true;102_true;100_true;116_true;114_true;117_true;109_true;106_true;103_true;115_false";
 	vector<string> lstconfig = mUtils::splitString(_listRoom, ';');
@@ -414,6 +416,15 @@ void LayerMainContentNew2::createListData()
             this->lstIconsNew.push_back(iconStruct(_id, _state, _imgNormal, _imgDis));
         }
     }
+    
+    this->lstIdNewGame.clear();
+    string _listNewGame = dataManager.getAppConfig().list_new_game;
+    vector<string> lstId = mUtils::splitString(_listNewGame, ';');
+    for (int i = 0; i < lstId.size(); i++){
+        int _gameid = atoi(lstId.at(0).c_str());
+        this->lstIdNewGame.push_back(_gameid);
+    }
+    
 }
 
 void LayerMainContentNew2::onButtonGame(Ref* pSender, ui::Widget::TouchEventType pType)
@@ -429,13 +440,13 @@ void LayerMainContentNew2::onButtonGame(Ref* pSender, ui::Widget::TouchEventType
             UserDefault::getInstance()->setBoolForKey("isShowEvent", false);
             UserDefault::getInstance()->flush();
             SceneManager::getSingleton().setGameID(tag);
-            if (tag == kGameTaiXiu || tag == kGameQuayThuong) {
+            if (tag == kGameQuayThuong) {
                 /*SceneManager::getSingleton().showLoading();
                  SceneManager::getSingleton().gotoPickGame(tag);*/
                 LayerPopupChonDongTien *_layerPopupChonDongTien = LayerPopupChonDongTien::create(tag);
                 _currScene->addChild(_layerPopupChonDongTien, 10000,9109);
             }
-            else if (tag == kGameSlot || tag == kGameXocDia || tag == kGameBauTom){
+            else if (tag == kGameSlot || tag == kGameXocDia || tag == kGameBauTom || tag == kGameTaiXiu){
                 SceneManager::getSingleton().setCurrRoomType(0);
                 //SceneManager::getSingleton().showLoading();
                 SceneManager::getSingleton().gotoPickGame(tag);
@@ -606,6 +617,7 @@ void LayerMainContentNew2::createPageView()
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         item->setTag(this->lstIcons[j].gameID);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         this->lstItemGame.push_back(item);
                         
                         Button* buttonGame = Button::create();
@@ -623,44 +635,90 @@ void LayerMainContentNew2::createPageView()
                     }
                 }
                 else{
-                    for (int j = jumpunit*i; j < lstIcons.size(); j++)
-                    {
-                        float posX;
-                        float posY;
-                        if (j == jumpunit + 8)
+                    if(i == 1){
+                        for (int j = jumpunit*i; j < jumpunit*2 ; j++)
                         {
-                            posX = (j - (jumpunit  + 4)) * sizeIcon.width + distanceX;
-                            posY = 0;
+                            float posX;
+                            float posY;
+                            
+                            if (j == jumpunit + 8)
+                            {
+                                posX = (j - (jumpunit  + 4)) * sizeIcon.width + distanceX;
+                                posY = 0;
+                            }
+                            else if (j > jumpunit + 8)
+                            {
+                                posX = (j - (jumpunit + 4)) * sizeIcon.width + distanceX;
+                                posY = 0;
+                            }
+                            else {
+                                posX = (j - jumpunit) * sizeIcon.width + distanceX;
+                                posY = 0;
+                            }
+                            ItemMenuGame* item = ItemMenuGame::create();
+                            
+                            //item->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
+                            item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                            item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
+                            item->setPosition(Vec2(posX,posY));
+                            layout->addChild(item);
+                            this->lstItemGame.push_back(item);
+                            
+                            Button* buttonGame = Button::create();
+                            buttonGame->loadTextureNormal("anim-bg-menu-game-tran.png");
+                            buttonGame->loadTextureDisabled("anim-bg-menu-game-tran.png");
+                            buttonGame->setAnchorPoint(Vec2::ZERO);
+                            buttonGame->setPosition(Vec2(posX, posY));
+                            buttonGame->setContentSize(sizeIcon);
+                            buttonGame->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
+                            buttonGame->setTag(this->lstIcons[j].gameID);
+                            buttonGame->setEnabled(this->lstIcons[j].state);
+                            
+                            layout->addChild(buttonGame);
+                            
                         }
-                        else if (j > jumpunit + 8)
+                    }else{
+                        for (int j = jumpunit*i; j < lstIcons.size(); j++)
                         {
-                            posX = (j - (jumpunit + 4)) * sizeIcon.width + distanceX;
-                            posY = 0;
-                        }
-                        else {
-                            posX = (j - jumpunit) * sizeIcon.width + distanceX;
-                            posY = 0;
-                        }
-                        ItemMenuGame* item = ItemMenuGame::create();
-                        
-                        //item->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
-                        item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
-                        item->setPosition(Vec2(posX,posY));
-                        layout->addChild(item);
-                        this->lstItemGame.push_back(item);
-                        
-                        Button* buttonGame = Button::create();
-                        buttonGame->loadTextureNormal("anim-bg-menu-game-tran.png");
-                        buttonGame->loadTextureDisabled("anim-bg-menu-game-tran.png");
-                        buttonGame->setAnchorPoint(Vec2::ZERO);
-                        buttonGame->setPosition(Vec2(posX, posY));
-                        buttonGame->setContentSize(sizeIcon);
-                        buttonGame->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
-                        buttonGame->setTag(this->lstIcons[j].gameID);
-                        buttonGame->setEnabled(this->lstIcons[j].state);
+                            float posX;
+                            float posY;
+                            
+                            if (j == jumpunit + 12)
+                            {
+                                posX = (j - (jumpunit  +8)) * sizeIcon.width + distanceX;
+                                posY = 0;
+                            }
+                            else if (j > jumpunit + 12)
+                            {
+                                posX = (j - (jumpunit + 8)) * sizeIcon.width + distanceX;
+                                posY = 0;
+                            }
+                            else {
+                                posX = (j - (jumpunit+4)) * sizeIcon.width + distanceX+30;
+                                posY = 0;
+                            }
+                            ItemMenuGame* item = ItemMenuGame::create();
+                            
+                            //item->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
+                            item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                            item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
+                            item->setPosition(Vec2(posX,posY));
+                            layout->addChild(item);
+                            this->lstItemGame.push_back(item);
+                            
+                            Button* buttonGame = Button::create();
+                            buttonGame->loadTextureNormal("anim-bg-menu-game-tran.png");
+                            buttonGame->loadTextureDisabled("anim-bg-menu-game-tran.png");
+                            buttonGame->setAnchorPoint(Vec2::ZERO);
+                            buttonGame->setPosition(Vec2(posX, posY));
+                            buttonGame->setContentSize(sizeIcon);
+                            buttonGame->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
+                            buttonGame->setTag(this->lstIcons[j].gameID);
+                            buttonGame->setEnabled(this->lstIcons[j].state);
 
-                        layout->addChild(buttonGame);
+                            layout->addChild(buttonGame);
 
+                        }
                     }
                 }
             }else{
@@ -681,6 +739,7 @@ void LayerMainContentNew2::createPageView()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -715,11 +774,12 @@ void LayerMainContentNew2::createPageView()
                             posY = 0;
                         }
                         else {
-                            posX = (j - jumpunit ) * sizeIcon.width + distanceX;
+                            posX = (j - jumpunit ) * sizeIcon.width + distanceX + 70;
                             posY = 0;
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -798,6 +858,7 @@ void LayerMainContentNew2::createPageView2()
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         item->setTag(this->lstIcons[j].gameID);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         this->lstItemGame.push_back(item);
                         
                         Button* buttonGame = Button::create();
@@ -831,6 +892,7 @@ void LayerMainContentNew2::createPageView2()
                         
                         //item->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -867,6 +929,7 @@ void LayerMainContentNew2::createPageView2()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -906,6 +969,7 @@ void LayerMainContentNew2::createPageView2()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -954,11 +1018,11 @@ void LayerMainContentNew2::onButtonArrow1(Ref* pSender, ui::Widget::TouchEventTy
 	if (pType == ui::Widget::TouchEventType::ENDED)
 	{
         int currIdx = pvMain->getCurPageIndex();
-        if (currIdx != 0)
-            pvMain->scrollToPage(currIdx - 1);
         int maxIdx = pvMain->getPages().size();
-        if (currIdx == 0 && currIdx < maxIdx)
-            pvMain->scrollToPage(currIdx + 1);
+        if ( currIdx == 0)
+            pvMain->scrollToPage(maxIdx - 1);
+        if (currIdx <= maxIdx - 1)
+            pvMain->scrollToPage(currIdx - 1);
         //if (scrollView->getInnerContainer().)
 	}
 }
@@ -967,7 +1031,12 @@ void LayerMainContentNew2::onButtonArrow2(Ref* pSender, ui::Widget::TouchEventTy
 {
 	if (pType == ui::Widget::TouchEventType::ENDED)
 	{
-		int currIdx = pvMain->getCurPageIndex();
+        int currIdx = pvMain->getCurPageIndex();
+        int maxIdx = pvMain->getPages().size();
+        if ( currIdx == maxIdx - 1)
+            pvMain->scrollToPage(0);
+        if (currIdx < maxIdx - 1)
+            pvMain->scrollToPage(currIdx + 1);
 
 	}
 }
@@ -1010,6 +1079,7 @@ void LayerMainContentNew2::createScrollView()
                     
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         scrollView->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -1111,6 +1181,7 @@ void LayerMainContentNew2::createPageViewNew()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         item->setTag(this->lstIcons[j].gameID);
@@ -1147,6 +1218,7 @@ void LayerMainContentNew2::createPageViewNew()
                         
                         //item->addTouchEventListener(CC_CALLBACK_2(LayerMainContentNew2::onButtonGame, this));
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -1183,6 +1255,7 @@ void LayerMainContentNew2::createPageViewNew()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);
@@ -1222,6 +1295,7 @@ void LayerMainContentNew2::createPageViewNew()
                         }
                         ItemMenuGame* item = ItemMenuGame::create();
                         item->setGameID(this->lstIcons[j].gameID,this->lstIcons[j].state);
+                        item->showNewGame(this->lstIcons[j].gameID, this->lstIdNewGame);
                         item->setPosition(Vec2(posX,posY));
                         layout->addChild(item);
                         this->lstItemGame.push_back(item);

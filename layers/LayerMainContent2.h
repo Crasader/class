@@ -50,7 +50,8 @@ public:
     vector<iconStruct> lstIconsNew;
     CREATE_FUNC(LayerMainContentNew2);
 private:
-
+    vector<int> lstIdNewGame;
+    
 	vector<menuStruct> lstIcons;
     vector<ItemMenuGame*> lstItemGame;
 	PageView* pvMain;

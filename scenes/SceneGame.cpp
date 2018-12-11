@@ -129,11 +129,21 @@ bool SceneGame::init()
     
     this->addChild(huthuong, 100000);
     
-    LayerLauncherMiniGame* minigame = LayerLauncherMiniGame::create();
-    minigame->setPosition(Vec2(sizeAdd.width, sizeAdd.height));
-    this->addChild(minigame, ZORDER_LIST::ZORDER_TAIXIU_MINI);
+    
+    
+    
+    
+    if (SceneManager::getSingleton().getGameID() != kGameTaiXiu){
+        LayerLauncherMiniGame* minigame = LayerLauncherMiniGame::create();
+        minigame->setPosition(Vec2(sizeAdd.width, sizeAdd.height));
+        minigame->setPosition(Vec2(sizeAdd.width, sizeAdd.height + 160));
+        this->addChild(minigame, ZORDER_LIST::ZORDER_TAIXIU_MINI);
+    }
+    
+    
     return true;
 }
+
 void SceneGame::timeoutChatMaxtime(float dt){
     SceneManager::getSingleton().timerchat++;
     //log("timer chat couting!");

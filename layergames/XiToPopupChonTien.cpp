@@ -28,7 +28,6 @@ XiToPopupChonTien::XiToPopupChonTien()
 XiToPopupChonTien::~XiToPopupChonTien()
 {
 	GameServer::getSingleton().removeListeners(this);
-
 }
 
 bool XiToPopupChonTien::init()
@@ -208,7 +207,7 @@ void XiToPopupChonTien::onBtnDongY(Ref* pSender){
         param->PutUtfString(GAME_ID, StringUtils::format("%d", SceneManager::getSingleton().getGameID()));
 		boost::shared_ptr<IRequest> request(new ExtensionRequest(REQUEST_AUTO_JOIN_ROOM, param));
 		GameServer::getSingleton().Send(request);
-        SceneMain::getSingleton().prepareToPickGame();
+//        SceneMain::getSingleton().prepareToPickGame();
 
 //        this->removeFromParent();
 	}
@@ -330,7 +329,7 @@ float XiToPopupChonTien::formatValue(float value){
 void XiToPopupChonTien::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
 	///loi nay hay bi nen bi unschedule luon
 
-	if (SceneManager::getSingleton().getGameID() == kGameXiTo){
+	if (SceneManager::getSingleton().getGameID() == kGameXiTo ){
 		SceneManager::getSingleton().showLoading();
 		//Gui thong tin muc cuoc va tien
 		boost::shared_ptr<ISFSObject> params(new SFSObject());
@@ -346,7 +345,7 @@ void XiToPopupChonTien::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost:
 		//        boost::shared_ptr<IRequest> request(new ExtensionRequest("rldt", params));
 		//        GameServer::getSingleton().Send(request);
 		//
-		SceneManager::getSingleton().gotoGame(kGameXiTo);
+		//SceneManager::getSingleton().gotoGame(kGameXiTo);
 	}
     if (SceneManager::getSingleton().getGameID() == kGamePoker){
         SceneManager::getSingleton().showLoading();
@@ -364,7 +363,7 @@ void XiToPopupChonTien::OnSmartFoxRoomJoin(unsigned long long ptrContext, boost:
         //        boost::shared_ptr<IRequest> request(new ExtensionRequest("rldt", params));
         //        GameServer::getSingleton().Send(request);
         //
-        SceneManager::getSingleton().gotoGame(kGamePoker);
+       // SceneManager::getSingleton().gotoGame(kGamePoker);
     }
 	//
 }
@@ -378,8 +377,14 @@ void XiToPopupChonTien::OnExtensionResponse(unsigned long long ptrContext, boost
 	//    public static final String EXT_EVENT_SETUP_CHIP_REQ					= "stchrq";
 	//    public static final String EXT_EVENT_SETUP_CHIP_RES					= "stchrs";
 
-	if (strcmp("stchrs", cmd->c_str()) == 0){
+	if (strcmp(EXT_EVENT_SETUP_CHIP_RES, cmd->c_str()) == 0){
+//        if (kGamePoker){
+//            SceneManager::getSingleton().gotoGame(kGamePoker);
+//        }
+        this->removeFromParentAndCleanup(true);
 	}
+   
+    
 }
 bool XiToPopupChonTien::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent)
 {

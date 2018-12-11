@@ -114,6 +114,7 @@ struct AppConfig{
     bool is24h;
     bool isSound;
     string list_game;
+    string list_new_game;
     string events;
     bool isShowMatKhau;
     bool isShareCancel;

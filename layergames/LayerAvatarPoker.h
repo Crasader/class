@@ -55,6 +55,7 @@ public:
     void showIconLeaveGame(bool state);
     void checkSameIp();
 
+//    void set
 private:
     AvatarPoker* User_IsMe;
     AvatarPoker* User_Left_Bottom;

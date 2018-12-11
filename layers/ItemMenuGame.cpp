@@ -97,11 +97,16 @@ bool ItemMenuGame::init()
     this->pnlTLMN->setSwallowTouches(false);
     this->pnlTLMN->setVisible(false);
     
-    
+    this->pnlNewGame = static_cast<Layout*>(this->pnlActive->getChildByName("pnlNewGame"));
     this->pnlSlot = static_cast<Layout*>(this->pnlActive->getChildByName("pnlSlot"));
     this->pnlSlot->setSwallowTouches(false);
     
     this->pnlSlot->setVisible(false);
+    
+    this->pnlTXBig = static_cast<Layout*>(this->pnlActive->getChildByName("pnlTXBig"));
+    this->pnlTXBig->setSwallowTouches(false);
+    this->pnlTXBig->setVisible(false);
+    
     
     
     this->pnlTX = static_cast<Layout*>(this->pnlActive->getChildByName("pnlTX"));
@@ -325,6 +330,12 @@ void ItemMenuGame::showXD(){
     auto txtKQXD= static_cast<Text*>(imgKQ->getChildByName("txtKQ"));
     txtKQXD->setString( dataManager.GetSysString(536));
 }
+
+void ItemMenuGame::showTXBig(){
+    this->pnlTXBig->setVisible(true);
+    
+}
+
 void ItemMenuGame::setShouldTouch(bool isTouch){
     this->shouldTouch = isTouch;
 }
@@ -431,11 +442,17 @@ void ItemMenuGame::setGameID(int gameID, bool state){
         case 137:
             this->animationMB();
             break;
+        case 113:
+            this->showTXBig();
+            break;
         case 114:
             this->showXD();
             break;
         case 133:
             this->playAnimationTCC();
+            break;
+        case 138:
+//            this->playAnimationTCC();
             break;
         default:
             this->setVisible(false);
@@ -451,7 +468,6 @@ void ItemMenuGame::setGameID(int gameID, bool state){
         if (imgGame){
             imgGame->loadTexture(StringUtils::format("gameicons/%s%d_dis.png",SceneManager::getSingleton().getFolderLang().c_str(),gameID));
         }
-        this->setVisible(true);
     }
 }
 void ItemMenuGame::animationMB(){
@@ -1282,5 +1298,21 @@ void ItemMenuGame::onExit()
         this->animFrames.clear();
     }catch(...){
        // log("eo biet nguyen nhan!");
+    }
+  
+}
+
+void ItemMenuGame::showNewGame(int gameID, vector<int> listNewGame){
+    ImageView* imgNewGame = static_cast<ImageView*>(this->pnlNewGame->getChildByName("imgNewGame"));
+    
+    if (listNewGame.size() == 0){
+        return;
+    }else{
+        for(int i = 0; i< listNewGame.size(); i++){
+            if (gameID == listNewGame.at(i)) {
+                imgNewGame->setVisible(true);
+                return;
+            }
+        }
     }
 }

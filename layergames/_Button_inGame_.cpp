@@ -1178,7 +1178,7 @@ void LayerButtonInGame::eventTouchBtnMenu(Ref *pObject, Widget::TouchEventType p
 			}
 			else
 			{
-				if (gameID == kGameXocDia){
+				if (gameID == kGameXocDia || gameID == kGameTaiXiu){
 					SceneManager::getSingleton().setCurrRoomType(-1);
 				}
 

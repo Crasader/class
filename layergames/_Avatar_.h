@@ -1,4 +1,4 @@
-﻿
+
 #ifndef __iCasino_v2__AvatarLayer__
 #define __iCasino_v2__AvatarLayer__
 

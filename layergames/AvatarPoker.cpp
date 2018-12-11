@@ -106,6 +106,8 @@ void AvatarPoker::showTypeBet(const int& type) {
     DTAG_BTN_POKER_BET_ALL=7,
     DTAG_BTN_POKER_GIVE = 2*/
     //GAME_TABLE_STATUS_BET_VALUE = 8;
+    
+    //DTAG_BTN_POKER_BET_ALL = 7 Theo server
     this->TypeBet = type;
     this->betType->setVisible(true);
     switch(type){
@@ -118,7 +120,7 @@ void AvatarPoker::showTypeBet(const int& type) {
         case DTAG_BTN_POKER_FOLLOW:
             this->betType->setTexture(StringUtils::format("%s%scall-icon.png",PATH_POKER,SceneManager::getSingleton().getFolderLang().c_str()));
             break;
-        case DTAG_BTN_POKER_BET_ALL:
+        case 7:
             this->betType->setTexture(StringUtils::format("%s%sallin-icon.png",PATH_POKER,SceneManager::getSingleton().getFolderLang().c_str()));
             break;
         case DTAG_BTN_POKER_GIVE:
@@ -180,5 +182,33 @@ void AvatarPoker::SetInfo(boost::shared_ptr<XiToInfoPlayer> info)
 void AvatarPoker::showChat(string& mess){
 	this->lblTypeBet->setVisible(false);
 	Avatar::showChat(mess);
+}
+
+void AvatarPoker::showLoseEffect(){
+//    this->setColor(Color3B::GRAY);
+//    this->typePlayer->setColor(Color3B(150, 150, 150));
+//    this->Avatar::setColor(Color3B(150, 150, 150));
+//    this->Avatar::setColor(Color3B(150, 150, 150));
+//    this->ava
+//    Avatar::bg->set
+//    this->setCo
+    this->Avatar::setColor(Color3B::GRAY);
+}
+void AvatarPoker::showNormalEffect(){
+//    this->typePlayer->setColor(Color3B::WHITE);
+    this->Avatar::setColor(Color3B(Color3B::WHITE));
+//    this->setOpacity(100);
+}
+void AvatarPoker::showEffectWin(){
+    auto emitter = ParticleSystemQuad::create("highlight.plist");
+    emitter->setAnchorPoint(Vec2::ANCHOR_BOTTOM_LEFT);
+    emitter->setPosition(Vec2(0, 0));
+    emitter->setAutoRemoveOnFinish(true);
+    //            emitter->setLife(0.3);
+    //            emitter->setTotalParticles(5);
+    TextureCache* tc = Director::getInstance()->getTextureCache();
+    Texture2D* coin = tc->addImage("light_effect.png");
+    emitter->setTexture(coin);
+    this->addChild(emitter);
 }
 
