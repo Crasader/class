@@ -1,0 +1,278 @@
+//
+//  LayerDanhSachLamCaiTXMini.cpp
+//  iCasino_v4
+//
+//  Created by NoBody aka HoangDD on 7/13/16.
+//
+//
+
+#include "LayerDanhSachLamCaiTXMini.h"
+#include "cocostudio/CocoStudio.h"
+#include "ui/CocosGUI.h"
+#include "ChanUtils.h"
+#include "../Common.h"
+#include "../SceneManager.h"
+#include "../mUtils.h"
+#include "PhomMessDef.h"
+
+LayerDanhSachLamCaiTXMini::LayerDanhSachLamCaiTXMini()
+{
+    GameServer::getSingleton().addListeners(this);
+}
+
+
+LayerDanhSachLamCaiTXMini::~LayerDanhSachLamCaiTXMini()
+{
+    GameServer::getSingleton().removeListeners(this);
+    
+}
+
+bool LayerDanhSachLamCaiTXMini::init()
+{
+    if (!Layer::init())
+    {
+        return false;
+    }
+    
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    
+    auto distance = (visibleSize.height - DESIGN_RESOLUTION_HEIGHT) / 2;
+    auto ratio = visibleSize.height / DESIGN_RESOLUTION_HEIGHT;
+    
+    auto rootNode = CSLoader::getInstance()->createNode("LayerDanhSachLamCaiTXMini.csb");
+    auto pnlB = static_cast<Layout*>(rootNode->getChildByName("Panel_3"));
+    pnlB->setScale(visibleSize.height / DESIGN_RESOLUTION_HEIGHT);
+    rootNode->setAnchorPoint(Point(0.5, 0.5));
+    rootNode->setPosition(Point(visibleSize / 2));
+    Size sizeAdd;
+//    if (SceneManager::getSingleton().getGameID() != kGameChan && SceneManager::getSingleton().getGameID() != kGameXiTo){
+        sizeAdd = ChanUtils::getSizePos();
+        
+//    }else{
+//        sizeAdd = Size(0,0);
+//    }
+    Size sizeAdd2 = Size(0,0);
+    rootNode->setPosition(Point(visibleSize.width/2,visibleSize.height/2-sizeAdd2.height));
+    
+    ui::Helper::doLayout(rootNode);
+    
+    this->addChild(rootNode);
+    
+    auto pnlBg = static_cast<Layout*>(rootNode->getChildByName("Panel_2"));
+    Button* btnClose = dynamic_cast<Button*>(pnlBg->getChildByName("btnClose"));
+    if(btnClose){
+        btnClose->addClickEventListener(CC_CALLBACK_1(LayerDanhSachLamCaiTXMini::onBtnClose, this));
+    }
+    
+    auto pnltbl = static_cast<Layout*>(pnlBg->getChildByName("pnlTable"));
+    
+    auto Text_1 = static_cast<Text*>(pnlBg->getChildByName("Text_1"));
+    Text_1->setString(dataManager.GetSysString(902));
+    
+    auto Image_20 = static_cast<ImageView*>(pnlBg->getChildByName("Image_20"));
+    Image_20->loadTexture(StringUtils::format("design/LayerTaiXiuMini/%shead-lamcai.png",SceneManager::getSingleton().getFolderLang().c_str()));
+    
+    //
+    
+    this->tblListRank = TableView::create(this, Size(pnltbl->getContentSize().width,pnltbl->getContentSize().height-8));
+    this->tblListRank->setAnchorPoint(pnltbl->getAnchorPoint());
+    this->tblListRank->setDirection(cocos2d::extension::ScrollView::Direction::VERTICAL);
+    this->tblListRank->setPosition(Vec2(pnltbl->getPosition().x+9,pnltbl->getPosition().y+sizeAdd.height));
+    this->tblListRank->setDelegate(this);
+    this->tblListRank->setVerticalFillOrder(TableView::VerticalFillOrder::TOP_DOWN);
+    this->addChild(this->tblListRank);
+    
+    boost::shared_ptr<ISFSObject> params(new SFSObject());
+    boost::shared_ptr<IRequest> request(new ExtensionRequest(EXT_EVENT_GET_LIST_MOBAT_REQUEST_TXMN, params));
+    GameServer::getSingleton().Send(request);
+    
+    
+    SceneManager::getSingleton().showLoading();
+    this->setScale(1);
+    
+    return true;
+}
+
+void LayerDanhSachLamCaiTXMini::tableCellTouched(TableView* table, TableViewCell* cell)
+{
+    CCLOG("cell touched at index: %ld", cell->getIdx());
+}
+
+Size LayerDanhSachLamCaiTXMini::tableCellSizeForIndex(TableView *table, ssize_t idx)
+{
+    return Size(1470, 111);
+}
+
+TableViewCell* LayerDanhSachLamCaiTXMini::tableCellAtIndex(TableView *table, ssize_t idx)
+{
+    TableViewCell *cell = table->dequeueCell();
+    item it = lstRank.at(idx);
+    if (!cell) {
+        
+        cell = new TableViewCell();
+        cell->autorelease();
+        
+        LayerItemLamCaiTXMini* his = LayerItemLamCaiTXMini::create();
+        
+        his->setDatas(it.stt,it.name,it.status);
+        his->setTag(123);
+        cell->addChild(his);
+        
+    }
+    else
+    {
+        LayerItemLamCaiTXMini* his = (LayerItemLamCaiTXMini*)cell->getChildByTag(123);
+        if (his){
+            his->setDatas(it.stt,it.name,it.status);
+        }
+    }
+    return cell;
+    
+}
+
+ssize_t LayerDanhSachLamCaiTXMini::numberOfCellsInTableView(TableView *table)
+{
+    
+    return lstRank.size();
+}
+void LayerDanhSachLamCaiTXMini::onBtnClose(Ref* pSender){
+    this->removeFromParentAndCleanup(true);
+}
+void LayerDanhSachLamCaiTXMini::OnExtensionResponse(unsigned long long ptrContext, boost::shared_ptr<BaseEvent> ptrEvent){
+    boost::shared_ptr<map<string, boost::shared_ptr<void> > > ptrEvetnParams = ptrEvent->Params();
+    boost::shared_ptr<void> ptrEventParamValueCmd = (*ptrEvetnParams)["cmd"];
+    boost::shared_ptr<string> cmd = ((boost::static_pointer_cast<string>)(ptrEventParamValueCmd));
+    
+    boost::shared_ptr<void> ptrEventParamValueParams = (*ptrEvetnParams)["params"];
+    boost::shared_ptr<ISFSObject> param = ((boost::static_pointer_cast<ISFSObject>(ptrEventParamValueParams)));
+    
+    if (strcmp(EXT_EVENT_GET_LIST_MOBAT_RESPONSE_TXMN, cmd->c_str()) == 0){
+        //this->runAction(Sequence::create(ScaleTo::create(0.2, 1.1),ScaleTo::create(0.2, 1),NULL));
+
+        boost::shared_ptr<string> ls = param->GetUtfString("lu");
+        if (ls != NULL){
+            auto lstHis = mUtils::splitString(*ls, ';');
+            this->lstRank.clear();
+            for(int i = 0; i< lstHis.size();i++){
+                auto hisItems = mUtils::splitString(lstHis[i], '|');
+                if (hisItems.size()<2) continue;
+                    item it ;
+                    it.stt = i+1;
+                    it.name = hisItems[0];
+                    it.status = hisItems[1];
+                    this->lstRank.push_back(it);
+                }
+            }
+            this->tblListRank->reloadData();
+            SceneManager::getSingleton().hideLoading();
+        }
+        
+    
+}
+string LayerDanhSachLamCaiTXMini::getTime(string str){
+    time_t tt = atoi(str.c_str());
+    struct tm * ptm = localtime(&tt);
+    char buf[30];
+    strftime (buf, 30, "%d/%m/%Y %H:%M:%S",  ptm);
+    return string(buf);
+}
+string LayerDanhSachLamCaiTXMini::getResult(string str){
+    vector<string> lst = mUtils::splitString(str, '_');
+    if(lst.size() < 3)
+        return "";
+    string kq = lst[0]+"-"+lst[1]+"-"+lst[2]+ " " +StringUtils::format("%d",atoi(lst[0].c_str())+atoi(lst[1].c_str())+atoi(lst[2].c_str()));
+    return kq;
+}
+
+bool LayerDanhSachLamCaiTXMini::onTouchBegan(cocos2d::Touch *pTouch, cocos2d::Event *pEvent)
+{
+    return true;
+}
+
+void LayerDanhSachLamCaiTXMini::onEnter()
+{
+    Layer::onEnter();
+    auto dispatcher = Director::getInstance()->getEventDispatcher();
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+    listener->onTouchBegan = CC_CALLBACK_2(LayerDanhSachLamCaiTXMini::onTouchBegan, this);
+    dispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+    _touchListener = listener;
+    //
+    //    GameServer::getSingleton().addListeners(this);
+}
+
+void LayerDanhSachLamCaiTXMini::onExit()
+{
+    Layer::onExit();
+    auto dispatcher = Director::getInstance()->getEventDispatcher();
+    dispatcher->removeEventListener(_touchListener);
+    //    GameServer::getSingleton().removeListeners(this);
+    //    Layer::onExit();
+}
+bool LayerItemLamCaiTXMini::init()
+{
+    if (!Layer::init())
+    {
+        return false;
+    }
+    
+    auto root = CSLoader::getInstance()->createNode("LayerItemLamCaiTXMini.csb");
+    ui::Helper::doLayout(root);
+    this->addChild(root);
+    
+    this->setContentSize(root->getContentSize());
+    
+
+        this->imgbg = static_cast<ImageView*>(root->getChildByName("imgBg"));
+        this->txtName = static_cast<Text*>(this->imgbg->getChildByName("txtName"));
+        this->txtStatus = static_cast<Text*>(this->imgbg->getChildByName("txtStatus"));
+        this->txtRank = static_cast<Text*>(this->imgbg->getChildByName("txtRank"));
+    
+   
+    return true;
+}
+void LayerItemLamCaiTXMini::setDatas(int stt,string name,string status){
+  
+        //this->imgbg->loadTexture("4-5-vv-bg.png");
+        //this->imgRank->loadTexture("4-5-vv-award.png");
+        //this->imgRank->setContentSize(Size(59,59));
+        this->txtRank->setVisible(true);
+        if (stt == 1){
+//            this->imgbg->loadTexture("1-bg.png");
+//            this->txtRank->setVisible(false);
+//            this->imgRank->loadTexture("1-award.png");
+//            this->imgRank->setContentSize(Size(85,75));
+        }
+        if (stt == 2){
+//            this->imgbg->loadTexture("2-3-bg.png");
+//            this->txtRank->setVisible(false);
+//            this->imgRank->loadTexture("2-award.png");
+//            this->imgRank->setContentSize(Size(61,75));
+
+        }
+        if (stt == 3){
+//            this->imgbg->loadTexture("2-3-bg.png");
+//            this->txtRank->setVisible(false);
+//            this->imgRank->loadTexture("3-award.png");
+//            this->imgRank->setContentSize(Size(61,75));
+
+        }
+//        this->imgbg->loadTexture("xh-1.png");
+//        if (stt % 2 == 0){
+//             this->imgbg->loadTexture("xh-2.png");
+//        }
+        this->txtRank->setString(StringUtils::format("%d",stt));
+        this->txtName->setString(ChanUtils::GetNamePlayer(name));
+    auto lst = mUtils::splitString(status,'/');
+    if (lst.size()<2) return;
+    if (atoi(lst[0].c_str()) == 0)
+        this->txtStatus->setString(dataManager.GetSysString(569));
+    else{
+        this->txtStatus->setString(status);
+        this->txtStatus->setColor(Color3B::GREEN);
+    }
+
+    
+}
